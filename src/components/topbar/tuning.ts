@@ -16,7 +16,7 @@ export const TIME = {
 // offsetX: negative = move LEFT, positive = move RIGHT
 // offsetY: positive = move DOWN
 export const SUN = {
-  size: 36,
+  size: 46,
   raysCount: 12,
   spinSeconds: 8,
   rayLengthScale: 0.8,
