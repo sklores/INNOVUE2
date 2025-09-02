@@ -25,9 +25,9 @@ export const SUN = {
 // ===== Lighthouse (left) =====
 export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png",
-  height: 176,       // px
-  offsetLeft: 14,    // px from left of scene
-  offsetBottom: 10,  // px from bottom of scene
+  height: 156,       // px
+  offsetLeft: 10,    // px from left of scene
+  offsetBottom: 2,   // px from bottom of scene
 
   beamOn: true,
   beamSweepSeconds: 6,
@@ -39,8 +39,8 @@ export const LIGHTHOUSE = {
 // ===== GCDC logo (centered by ClientLogo.tsx) =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 56,
-  height: 56,
+  width: 86,
+  height: 86,
   opacity: 0.98,
 };
 
@@ -59,10 +59,29 @@ export const FRAME = {
 // ===== Beam flash on refresh =====
 export const BEAM_FLASH = {
   enable: true,
-  durationMs: 1600,            // total time for sweep + glow
-  delayMs: 50,                 // small delay after mount
+  durationMs: 1600,            // total time for sweep + glow (increase if you want longer)
+  delayMs: 50,                  // small delay after mount
   beamColor: "rgba(255, 247, 180, 0.70)",
   beamWidthDeg: 34,            // slightly wider than normal sweep
   glowColor: "rgba(255, 247, 180, 0.95)",
   glowSpreadPx: 24,            // logo glow thickness
+
+  // optional: span of rotation around the target angle (defaults to 44deg if omitted)
+  sweepSpanDeg: 52,
+};
+
+// ===== INNOVUE text fill area (scene coordinates) =====
+// This is a soft highlight that appears over the word "INNOVUE" while the beam sweeps.
+// Tweak left/top/width/height to align with your logo art.
+export const INNOVUE_FILL = {
+  enable: true,
+  left: 86,            // px from left of scene
+  top: 72,             // px from top of scene
+  width: 170,          // px
+  height: 54,          // px
+  radius: 10,          // corner radius
+  color: "rgba(255, 247, 180, 0.45)", // warm light
+  blurPx: 1.2,
+  opacity: 0.0,        // start opacity (do not change)
+  peakOpacity: 0.85,   // how bright it gets at mid sweep
 };
