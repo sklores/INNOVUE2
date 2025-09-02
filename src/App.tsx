@@ -1,15 +1,6 @@
-import TopBarShell from "./components/topbar/TopBarShell";
-import KpiTiles   from "./features/kpi/KpiTiles";
-import Marquee    from "./features/marquee/Marquee";
-import BottomBar  from "./components/bottombar/BottomBar";
+// src/App.tsx
+import Dashboard from "./components/dashboard/Dashboard";
 
 export default function App() {
-  return (
-    <>
-      <TopBarShell />
-      <KpiTiles />
-      <Marquee />
-      <BottomBar />
-    </>
-  );
+  return <Dashboard />;
 }
