@@ -1,20 +1,20 @@
 // src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL } from "./tuning";
+import { TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL, ROCK } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
 import Weather from "./Weather";
 import Lighthouse from "./Lighthouse";
 import ClientLogo from "./ClientLogo";
 import LightBeam from "./LightBeam";
-import Waves from "./Waves";            // ✅ NEW
+import Waves from "./Waves";
+import RockBase from "./RockBase";   // ✅ NEW
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Measure scene width so we can compute sizes for waves/beam targeting
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -26,7 +26,6 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("resize", set);
   }, []);
 
-  // Flash state (runs once on mount / page refresh)
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -35,48 +34,32 @@ const TopBarShell: React.FC = () => {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Lighthouse lantern point (approx) in scene coords
   const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
   const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
-  const lanternY = TOPBAR.height - lanternY_fromBottom; // convert to "from top"
+  const lanternY = TOPBAR.height - lanternY_fromBottom;
 
-  // Target: INNOVUE text rectangle center (from tuning)
-  const targetRect = INNOVUE_FILL;
-  const targetX = targetRect.left + targetRect.width / 2;
-  const targetY = targetRect.top + targetRect.height / 2;
+  const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
+  const targetY = INNOVUE_FILL.top + INNOVUE_FILL.height / 2;
 
-  // Angle from lantern to target (deg)
   const dx = targetX - lanternX;
   const dy = targetY - lanternY;
   const angleRad = Math.atan2(dy, dx);
   const angleDeg = (angleRad * 180) / Math.PI;
 
-  // Sweep centered around angleDeg
   const span = BEAM_FLASH.sweepSpanDeg ?? 44;
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
 
-  // Reduced motion hint
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Temporary sales value (0..1). We’ll wire to KPI later.
-  const salesRatio = 0.62;
-
-  // Fill animation name (for opacity ramp)
+  const salesRatio = 0.62; // placeholder until wired to KPI
   const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
 
   return (
-    <div
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        paddingInline: 12,
-        marginTop: 6,
-      }}
-    >
+    <div style={{ width: "100%", boxSizing: "border-box", paddingInline: 12, marginTop: 6 }}>
       <div
         className="topbar-frame-outer"
         style={{
@@ -100,12 +83,7 @@ const TopBarShell: React.FC = () => {
           <div
             ref={sceneRef}
             className="topbar-scene"
-            style={{
-              width: "100%",
-              height: TOPBAR.height,
-              position: "relative",
-              overflow: "hidden",
-            }}
+            style={{ width: "100%", height: TOPBAR.height, position: "relative", overflow: "hidden" }}
           >
             {/* back -> front */}
             <div className="topbar-layer" style={{ zIndex: 1 }}>
@@ -116,7 +94,7 @@ const TopBarShell: React.FC = () => {
               <Weather condition="cloudy" intensity={0.6} />
             </div>
 
-            {/* ✅ Waves at the very bottom */}
+            {/* Waves at the very bottom */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               <Waves
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -125,14 +103,30 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* lighthouse (left) */}
+            {/* ✅ Rock base (foreground, sits above waves; below lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: ROCK.offsetLeft,
+                  bottom: ROCK.offsetBottom,
+                  width: ROCK.width,
+                  height: ROCK.height,
+                  pointerEvents: "none",
+                }}
+              >
+                <RockBase size={{ width: ROCK.width, height: ROCK.height }} />
+              </div>
+            </div>
+
+            {/* Lighthouse (rotating beam pauses during flash) */}
+            <div className="topbar-layer" style={{ zIndex: 4 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
-            {/* sun/moon (top-right) */}
-            <div className="topbar-layer" style={{ zIndex: 4 }}>
-              <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
+            {/* Sun/Moon (top-right) */}
+            <div className="topbar-layer" style={{ zIndex: 5 }}>
+              <div style={{ position: "absolute", right: 10 - (SUN.offsetX ?? 0), top: 8 + (SUN.offsetY ?? 0) }}>
                 <SunMoon
                   size={SUN.size}
                   raysCount={SUN.raysCount}
@@ -142,7 +136,7 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* beam flash on page refresh — sweep aimed at INNOVUE text */}
+            {/* Flash beam aimed at INNOVUE text */}
             {flash && (
               <LightBeam
                 originX={lanternX}
@@ -155,9 +149,8 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* centered GCDC logo + optional glow */}
+            {/* Centered GCDC logo + optional glow */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              {/* soft glow on the logo during flash */}
               {flash && (
                 <div
                   style={{

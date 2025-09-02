@@ -35,7 +35,15 @@ export const LIGHTHOUSE = {
   beamColor: "rgba(255,255,180,0.65)",
   beamBlurPx: 1.2,
 };
+// …keep everything you already have above unchanged …
 
+// ===== Rock base under lighthouse =====
+export const ROCK = {
+  width: 190,        // px width of the rock shelf
+  height: 80,        // px height of the rock shelf
+  offsetLeft: 0,     // px from LEFT edge of scene
+  offsetBottom: 0,   // px from BOTTOM edge of scene
+};
 // ===== GCDC logo (centered by ClientLogo.tsx) =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
