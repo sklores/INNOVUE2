@@ -1,4 +1,3 @@
-// src/App.tsx
 import TopBarShell from "./components/topbar/TopBarShell";
 import SelectorsBar from "./components/topbar/SelectorsBar";
 import KpiTiles     from "./features/kpi/KpiTiles";

@@ -253,3 +253,81 @@
   color: #94a3b8;
   cursor: not-allowed;
 }
+/* ===== Overlapping selectors bar (centered tabs, refresh on right) ===== */
+.selectors-wrap {
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: 12px;          /* match KPI gutters */
+  margin-top: -24px;             /* overlap the scenic frame */
+  position: relative;
+  z-index: 20;
+}
+
+.selectors-bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.10),
+    0 1px 0 rgba(0,0,0,0.06);
+  position: relative;
+}
+
+/* centered variant: tabs centered; refresh pinned right */
+.selectors-bar--centered {
+  justify-content: center;
+  padding: 0 56px;               /* space so refresh doesn't overlap tabs */
+}
+
+.sel-tabs {
+  display: inline-flex;
+  gap: 6px;
+  background: #f7f9fc;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.sel-tab {
+  height: 32px;
+  min-width: 72px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+}
+.sel-tab--active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+.sel-tab--disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* refresh button pinned to the right */
+.sel-refresh {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #17325d;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sel-refresh:hover { background: #e3ecff; }
+.sel-refresh:active { transform: translateY(calc(-50% + 1px)); }
+.sel-refresh-icon { font-size: 16px; line-height: 1; }

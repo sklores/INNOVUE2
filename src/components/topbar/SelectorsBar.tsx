@@ -2,31 +2,36 @@
 import React, { useState } from "react";
 
 /**
- * Overlapping control bar:
- * - Sits just below the scenic frame, overlapping by ~24px
- * - Refresh button fires a global "innovue:refresh" event
- * - Day active; Week/Month present (disabled for now)
+ * Centered Day/Week/Month tabs with Refresh pinned to the right.
+ * Overlaps the scenic frame by ~24px (see CSS).
  */
 const SelectorsBar: React.FC = () => {
   const [range, setRange] = useState<"day" | "week" | "month">("day");
 
   const fireRefresh = () => {
-    // Fire a global event TopBarShell listens to (to trigger the lighthouse flash)
     window.dispatchEvent(new Event("innovue:refresh"));
   };
 
-  const btn = (key: "day" | "week" | "month", label: string, disabled?: boolean) => {
-    const active = range === key;
+  const Tab = ({
+    value,
+    label,
+    disabled,
+  }: {
+    value: "day" | "week" | "month";
+    label: string;
+    disabled?: boolean;
+  }) => {
+    const active = range === value;
     return (
       <button
-        onClick={() => !disabled && setRange(key)}
-        disabled={!!disabled}
         className={
           "sel-tab" +
           (active ? " sel-tab--active" : "") +
           (disabled ? " sel-tab--disabled" : "")
         }
         aria-pressed={active}
+        onClick={() => !disabled && setRange(value)}
+        disabled={!!disabled}
       >
         {label}
       </button>
@@ -35,19 +40,19 @@ const SelectorsBar: React.FC = () => {
 
   return (
     <div className="selectors-wrap">
-      <div className="selectors-bar">
-        <button className="sel-refresh" onClick={fireRefresh} title="Refresh">
-          <span className="sel-refresh-icon" aria-hidden>⟳</span>
-          <span className="sel-refresh-label">Refresh</span>
-        </button>
-
-        <div className="sel-spacer" />
-
+      <div className="selectors-bar selectors-bar--centered">
+        {/* centered tabs */}
         <div className="sel-tabs">
-          {btn("day", "Day")}
-          {btn("week", "Week", true)}
-          {btn("month", "Month", true)}
+          <Tab value="day" label="Day" />
+          <Tab value="week" label="Week" disabled />
+          <Tab value="month" label="Month" disabled />
         </div>
+
+        {/* refresh pinned to the right */}
+        <button className="sel-refresh sel-refresh--right" onClick={fireRefresh}>
+          <span className="sel-refresh-label">Refresh</span>
+          <span className="sel-refresh-icon" aria-hidden>⟳</span>
+        </button>
       </div>
     </div>
   );
