@@ -43,8 +43,8 @@ export const LIGHTHOUSE = {
 // These values are used directly by ClientLogo.tsx
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 66,        // px — size knob
-  height: 66,       // px — size knob
+  width: 76,        // px — size knob
+  height: 76,       // px — size knob
   offsetLeft: 152,  // px from LEFT edge of the scene
   offsetTop: 10,    // px from TOP edge of the scene
   opacity: 0.98,
