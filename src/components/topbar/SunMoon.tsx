@@ -1,61 +1,124 @@
-// src/components/topbar/SunMoon.tsx
-import { SUN_SIZE, SUN_COLOR, MOON_COLOR } from "./tuning";
+import React, { useMemo } from "react";
 
-// local-time day/night (simple for now; we’ll wire sync later)
-function isDay(now = new Date()) {
-  const h = now.getHours();
-  return h >= 6 && h < 18;
-}
+/**
+ * SunMoon
+ * - Animated sun (rotating rays) for daytime
+ * - Animated moon (gentle float) + tiny twinkles for nighttime
+ * Show exactly ONE based on `mode` or local time.
+ */
+type Props = {
+  size?: number;                 // px
+  mode?: "auto" | "day" | "night";
+  sunriseHour?: number;          // local 24h
+  sunsetHour?: number;           // local 24h
+  className?: string;
+};
 
-export default function SunMoon() {
-  const day = isDay();
+const SunMoon: React.FC<Props> = ({
+  size = 36,
+  mode = "auto",
+  sunriseHour = 6,
+  sunsetHour = 18,
+  className = "",
+}) => {
+  const isDay = useMemo(() => {
+    if (mode !== "auto") return mode === "day";
+    const h = new Date().getHours();
+    return h >= sunriseHour && h < sunsetHour;
+  }, [mode, sunriseHour, sunsetHour]);
 
+  // inline styles so this file is drop-in without extra CSS imports
+  const commonWrap: React.CSSProperties = {
+    width: size,
+    height: size,
+    position: "relative",
+  };
+
+  if (isDay) {
+    return (
+      <div className={`iv-sun ${className}`} style={commonWrap}>
+        {/* core */}
+        <div style={{
+          position: "absolute", inset: 0,
+          borderRadius: "50%",
+          background: "radial-gradient(#fff9b1 0%, #ffd66e 60%, #ffbd3c 100%)",
+          boxShadow: "0 0 10px rgba(255, 200, 70, 0.7)",
+        }}/>
+        {/* rays */}
+        <div style={{
+          position: "absolute", inset: 0,
+          animation: "iv-spin 8s linear infinite",
+        }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: "50%", top: "50%",
+              width: 2, height: size * 0.55,
+              transformOrigin: "center calc(-" + size * 0.1 + "px)",
+              transform: `translate(-50%, -50%) rotate(${i * 30}deg)`,
+              background: "linear-gradient(to bottom, rgba(255,205,90,.0) 0%, rgba(255,205,90,.95) 75%)",
+              borderRadius: 1
+            }}/>
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes iv-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  // night
   return (
-    <div
-      aria-label={day ? "Sun" : "Moon"}
-      title={day ? "Day" : "Night"}
-      style={{
-        width: SUN_SIZE,
-        height: SUN_SIZE,
-        position: "relative",
-      }}
-    >
+    <div className={`iv-moon ${className}`} style={commonWrap}>
+      {/* moon base */}
+      <div style={{
+        position: "absolute", inset: 0,
+        borderRadius: "50%",
+        background: "radial-gradient(#dfe9f6 0%, #b9c6dd 60%, #93a3c1 100%)",
+        transform: "translateY(0)",
+        animation: "iv-float 4s ease-in-out infinite",
+      }}/>
+      {/* crescent cutout */}
+      <div style={{
+        position: "absolute",
+        right: size * 0.08, top: size * 0.08,
+        width: size * 0.9, height: size * 0.9,
+        borderRadius: "50%",
+        background: "linear-gradient(#87a0c5, #87a0c5)",
+        filter: "blur(0.2px)",
+      }}/>
+      {/* tiny twinkles */}
+      {Array.from({ length: 4 }).map((_, i) => {
+        const left = [8, 2, 22, 28][i] / 36 * size;
+        const top  = [2, 18, 6, 22][i] / 36 * size;
+        const delay = i * 0.6;
+        return (
+          <span key={i} style={{
+            position: "absolute",
+            left, top,
+            width: 2, height: 2,
+            borderRadius: "50%",
+            background: "white",
+            opacity: 0.8,
+            animation: `iv-twinkle 2.4s ease-in-out ${delay}s infinite`,
+          }}/>
+        );
+      })}
+
       <style>{`
-        @keyframes sunPulse {
-          0%   { transform: scale(1);   box-shadow: 0 0 12px rgba(255,211,110,0.75); }
-          50%  { transform: scale(1.06); box-shadow: 0 0 22px rgba(255,211,110,0.85); }
-          100% { transform: scale(1);   box-shadow: 0 0 12px rgba(255,211,110,0.75); }
+        @keyframes iv-float {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
         }
-        @keyframes moonGlow {
-          0%   { transform: translateY(0px);   box-shadow: 0 0 10px rgba(245,243,206,0.45); }
-          50%  { transform: translateY(-1.5px); box-shadow: 0 0 16px rgba(245,243,206,0.65); }
-          100% { transform: translateY(0px);   box-shadow: 0 0 10px rgba(245,243,206,0.45); }
+        @keyframes iv-twinkle {
+          0%,100% { opacity: .2; transform: scale(0.8); }
+          50% { opacity: .9; transform: scale(1); }
         }
       `}</style>
-
-      {day ? (
-        <div
-          aria-hidden
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: "50%",
-            background: `radial-gradient(circle at 35% 35%, ${SUN_COLOR}, #ffc947 60%, #f6a83b 100%)`,
-            animation: "sunPulse 4.4s ease-in-out infinite",
-          }}
-        />
-      ) : (
-        <div
-          aria-hidden
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: "50%",
-            background: `radial-gradient(circle at 40% 40%, ${MOON_COLOR}, #bfc8de 55%, #8ea0c6 100%)`,
-            animation: "moonGlow 5.6s ease-in-out infinite",
-          }}
-        />
-      )}
     </div>
   );
-}
+};
+
+export default SunMoon;

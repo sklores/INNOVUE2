@@ -1,45 +1,40 @@
-// src/components/topbar/TopBarShell.tsx
-import "../../styles/topbar.css";
-import {
-  TOPBAR_HEIGHT,
-  LOGO_SIZE,
-  MARGIN,
-  SKY_DAY,
-  SKY_NIGHT,
-} from "./tuning";
+import React from "react";
 import SunMoon from "./SunMoon";
+import "./topbar.css";
 
-function isDay(now = new Date()) {
-  const h = now.getHours();
-  return h >= 6 && h < 18;
-}
+type Props = {
+  leftLogoSrc?: string;     // e.g. /logos/innovue-mark.svg (lighthouse mark)
+  centerBadge?: React.ReactNode; // GCDC badge component or <img>
+  mode?: "auto" | "day" | "night"; // pass through to SunMoon
+};
 
-export default function TopBarShell() {
-  const day = isDay();
-  const bg = day ? SKY_DAY : SKY_NIGHT;
-
+const TopBarShell: React.FC<Props> = ({
+  leftLogoSrc = "/logos/innovue-mark.svg",
+  centerBadge = <div className="gcdc-badge">GCDC</div>,
+  mode = "auto",
+}) => {
   return (
-    <header
-      className="topbar"
-      style={{ height: TOPBAR_HEIGHT, padding: MARGIN, background: bg }}
-      aria-label="Scenic top bar"
-    >
-      {/* Left: lighthouse/logo */}
+    <div className="topbar">
+      {/* Left: small lighthouse mark */}
       <div className="topbar-logo">
-        <img
-          src="/logos/innovuegrey.png"
-          alt="Innovue Logo"
-          style={{ height: LOGO_SIZE, width: "auto", objectFit: "contain" }}
-        />
+        {leftLogoSrc ? <img src={leftLogoSrc} alt="Innovue" /> : null}
       </div>
 
-      {/* Center stage (future layers/weather) */}
-      <div className="topbar-sky" />
+      {/* Center sky scene with clouds & lighthouse silhouette & center badge */}
+      <div className="topbar-sky">
+        <div className="sky-paint" />
+        <div className="lighthouse" />
+        <div className="cloud cloud-a" />
+        <div className="cloud cloud-b" />
+        <div className="center-badge-wrap">{centerBadge}</div>
 
-      {/* Right: Sun/Moon component */}
-      <div className="topbar-corner">
-        <SunMoon />
+        {/* Right corner: ONLY one shown via SunMoon */}
+        <div className="topbar-corner">
+          <SunMoon size={32} mode={mode} />
+        </div>
       </div>
-    </header>
+    </div>
   );
-}
+};
+
+export default TopBarShell;
