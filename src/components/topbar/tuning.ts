@@ -11,7 +11,7 @@ export const TOPBAR = {
     sunsetHour: 18,
   };
   
-  // SUN tuning (unchanged unless you want to tweak)
+  // SUN knobs (already in use)
   export const SUN = {
     size: 36,
     raysCount: 12,
@@ -21,33 +21,30 @@ export const TOPBAR = {
     offsetY: 12,
   };
   
-  // 🔧 FRAME (double-mat “gallery” style)
-  // Thickness uses CSS clamp(min, vw, max) so it scales with phone width.
-  export const FRAME = {
-    strokeColor: "#E6EBF3",
-    strokeWidth: 1,             // outer hairline
-    outerRadius: 16,            // outermost corner radius
-    innerRadius: 12,            // radius for the scene inside the mats
+  // ===== NEW: Lighthouse (left) =====
+  export const LIGHTHOUSE = {
+    imgSrc: "/logos/innovuegrey.png", // existing file in /public/logos
+    height: 76,        // px height of the tower image
+    offsetLeft: 14,    // px from LEFT edge of scene
+    offsetBottom: 10,  // px from BOTTOM edge of scene
   
-    // First (outer) mat
-    mat1: {
-      min: 8,                   // px
-      max: 16,                  // px
-      vw: "3vw",                // responsive middle term
-      color: "#FFFFFF",
-      insetHighlight: "rgba(255,255,255,0.7)", // subtle top highlight
-    },
+    // rotating beam
+    beamOn: true,
+    beamSweepSeconds: 6,        // lower = faster sweep
+    beamWidthDeg: 26,           // angular width of the bright wedge
+    beamColor: "rgba(255,255,180,0.65)",
+    beamBlurPx: 1.2,
+  };
   
-    // Second (inner) mat
-    mat2: {
-      min: 6,
-      max: 12,
-      vw: "2.2vw",
-      color: "#FAFBFD",
-    },
-  
-    // Soft outer shadow for the whole frame
-    shadow: "0 10px 22px rgba(0,0,0,0.08)",
-    // Optional very light inner bevel on the scene edge
-    sceneInsetShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+  // ===== NEW: Center badge (GCDC) =====
+  export const BADGE = {
+    imgSrc: "/logos/gcdclogo.png", // existing file in /public/logos
+    size: 72,          // circle diameter (px)
+    offsetTop: 10,     // px from TOP edge of scene (centered horizontally)
+    // ring / background styling
+    showRing: true,
+    ringColor: "#cfd9ea",
+    ringWidth: 2,
+    background: "radial-gradient(#ffffff 0%, #eef5ff 70%)",
+    textFallback: "GCDC", // used only if img is missing
   };

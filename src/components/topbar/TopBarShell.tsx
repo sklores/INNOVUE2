@@ -4,6 +4,8 @@ import { TOPBAR, SUN, FRAME } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
 import Weather from "./Weather";
+import Lighthouse from "./Lighthouse";
+import ClientLogo from "./ClientLogo";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -11,17 +13,14 @@ const TopBarShell: React.FC = () => {
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
   return (
-    // ✅ Match the KPI tiles "lane": same side grey showing via padding.
-    // Adjust paddingInline if your tiles use a different gutter.
     <div
       style={{
         width: "100%",
         boxSizing: "border-box",
-        paddingInline: 12,  // <-- same side gutters as tiles
-        marginTop: 6,       // <-- a smidge of top spacing
+        paddingInline: 12,
+        marginTop: 6,
       }}
     >
-      {/* === Frame (double-mat) with responsive thickness === */}
       <div
         className="topbar-frame-outer"
         style={{
@@ -46,7 +45,7 @@ const TopBarShell: React.FC = () => {
             className="topbar-scene"
             style={{
               width: "100%",
-              height: TOPBAR.height,   // scene stays fixed height (painting)
+              height: TOPBAR.height,
               position: "relative",
               overflow: "hidden",
             }}
@@ -60,7 +59,13 @@ const TopBarShell: React.FC = () => {
               <Weather condition="cloudy" intensity={0.6} />
             </div>
 
-            <div className="topbar-layer" style={{ zIndex: 3, pointerEvents: "none" }}>
+            {/* lighthouse (left) */}
+            <div className="topbar-layer" style={{ zIndex: 3 }}>
+              <Lighthouse />
+            </div>
+
+            {/* sun/moon (top-right) */}
+            <div className="topbar-layer" style={{ zIndex: 4 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
                   size={SUN.size}
@@ -70,10 +75,14 @@ const TopBarShell: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* centered GCDC badge */}
+            <div className="topbar-layer" style={{ zIndex: 5 }}>
+              <ClientLogo />
+            </div>
           </div>
         </div>
       </div>
-      {/* === /Frame === */}
     </div>
   );
 };
