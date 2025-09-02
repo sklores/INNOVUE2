@@ -1,78 +1,149 @@
 // src/features/kpi/KpiTiles.tsx
-type Tile = {
-    label: string;
-    value: string;
-    gradient: [string, string]; // [from, to]
+import { useEffect, useMemo, useState } from "react";
+
+// ---- TEMP fetch (inline) ----
+// Replace this later with your real Sheets fetch. For now it returns no rows,
+// so the UI mounts cleanly.
+async function fetchSheetValues(): Promise<string[][]> {
+  return []; // plug your working fetch here when ready
+}
+
+// ---- helpers copied from your old code ----
+const toNum = (v: unknown) => {
+  const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
+const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
+const fmtUSD = (n: number | null) =>
+  n == null ? "—" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmtPct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
+const fmtInt = (n: number | null) => (n == null ? "—" : n.toLocaleString("en-US"));
+
+type Unit = "$" | "%" | "";
+export type KpiRow = { label: string; value: number | null; greenAt: number | null; redAt: number | null; unit: Unit };
+
+const PASTEL = { red: "#F6C1C1", amber: "#F8D5AA", green: "#C6E2D6" };
+const scoreToPastel = (s: number) => (s >= 70 ? PASTEL.green : s >= 40 ? PASTEL.amber : PASTEL.red);
+
+function computeScore(opts: {
+  value: number | null; unit: Unit; higherIsBetter: boolean; greenAt?: number | null; redAt?: number | null;
+}) {
+  const { value, unit, higherIsBetter, greenAt, redAt } = opts;
+  if (value == null) return 0;
+  const G = toNum(greenAt ?? null), R = toNum(redAt ?? null);
+  if (G != null && R != null && G !== R) {
+    let t = higherIsBetter ? (value - R) / (G - R) : (R - value) / (R - G);
+    return clamp(Math.round(t * 100));
+  }
+  if (unit === "%") return clamp(Math.round(higherIsBetter ? value : 100 - value));
+  return value > 0 ? 75 : 25;
+}
+
+// ---- component ----
+export default function KpiTiles() {
+  const [rows, setRows] = useState<string[][]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true); setErr(null);
+        const r = await fetchSheetValues(); // A2:G17
+        setRows(r || []);
+      } catch (e: any) {
+        setErr(String(e?.message || e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // map rows to KPI objects (same as your old page)
+  const kpiRowIdx = [0,1,2,3,4,5,8,9,10];
+  const kpis = useMemo(() => {
+    const out: KpiRow[] = [];
+    for (const idx of kpiRowIdx) {
+      const r = rows[idx] || [];
+      const label = String(r[0] ?? "").trim();
+      if (!label) continue;
+      const unitToken = String(r[5] ?? "").trim().toLowerCase();
+      const unit: Unit = unitToken === "$" || unitToken === "usd" || unitToken === "dollar" ? "$" : unitToken === "%" ? "%" : "";
+      out.push({ label, value: toNum(r[1]), greenAt: toNum(r[2]), redAt: toNum(r[3]), unit });
+    }
+    return out;
+  }, [rows]);
+
+  // lookups
+  const byLabel = useMemo(() => {
+    const map = new Map<string, KpiRow>();
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    for (const k of kpis) map.set(norm(k.label), k);
+    const get = (...names: string[]) => { for (const n of names) { const hit = map.get(norm(n)); if (hit) return hit; } return undefined; };
+    return { get };
+  }, [kpis]);
+
+  const sales     = byLabel.get("sales");
+  const cogs      = byLabel.get("cogs","cost of goods","cost of goods sold");
+  const labor     = byLabel.get("labor","labour");
+  const prime     = byLabel.get("prime","prime cost");
+  const bank      = byLabel.get("bank","bank balance");
+  const online    = byLabel.get("online views","views","online");
+  const review    = byLabel.get("review score","reviews","rating");
+  const netProfit = byLabel.get("net profit","profit");
+
+  return (
+    <section style={{ padding: 12 }}>
+      <Card title="Sales" row={sales} higherIsBetter loading={loading} err={err} />
+      <Row2>
+        <Card title="COGS"  row={cogs}  higherIsBetter={false} loading={loading} err={err} />
+        <Card title="Labor" row={labor} higherIsBetter={false} loading={loading} err={err} />
+      </Row2>
+      <Row2>
+        <Card title="Prime" row={prime} higherIsBetter={false} loading={loading} err={err} />
+        <Card title="Bank"  row={bank}  higherIsBetter        loading={loading} err={err} />
+      </Row2>
+      <Row2>
+        <Card title="Online Views" row={online} higherIsBetter loading={loading} err={err} />
+        <Card title="Review Score" row={review} higherIsBetter loading={loading} err={err} />
+      </Row2>
+      <Card title="Net Profit" row={netProfit} higherIsBetter loading={loading} err={err} />
+    </section>
+  );
+}
+
+function Row2({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginTop:12 }}>
+      {children}
+    </div>
+  );
+}
+
+function Card({
+  title, row, higherIsBetter, loading, err
+}: { title:string; row?:KpiRow; higherIsBetter:boolean; loading:boolean; err:string|null }) {
+  const value = row?.value ?? null;
+  const unit  = row?.unit  ?? "";
+  const bg    = scoreToPastel(
+    computeScore({ value, unit: unit as Unit, higherIsBetter, greenAt: row?.greenAt ?? null, redAt: row?.redAt ?? null })
+  );
+  const shown = unit === "$" ? fmtUSD(value) : unit === "%" ? fmtPct(value) : fmtInt(value);
+
+  const shell: React.CSSProperties = {
+    background:"#fff", color:"#2A2C34", border:"1px solid #E1E2E6",
+    borderRadius:16, padding:14, boxShadow:"0 2px 10px rgba(0,0,0,0.18)", marginTop:12
   };
-  
-  const TILES: Tile[] = [
-    { label: "Sales",        value: "$2,500", gradient: ["#76d0c3", "#4bb1a0"] },
-    { label: "COGS",         value: "27%",    gradient: ["#f2cf98", "#e5a963"] },
-    { label: "Labor",        value: "$407",   gradient: ["#8fd0c3", "#5cad9f"] },
-    { label: "Prime",        value: "$1,082", gradient: ["#f2a1a9", "#d86b74"] },
-    { label: "Bank",         value: "$9,403", gradient: ["#7bc2b8", "#2e6f77"] },
-    { label: "Review Score", value: "4.4",    gradient: ["#9fe2c0", "#4fb68f"] },
-  ];
-  
-  export default function KpiTiles() {
-    return (
-      <section style={{ padding: 12 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-          }}
-        >
-          {TILES.map((t) => (
-            <KpiCard key={t.label} {...t} />
-          ))}
-        </div>
-      </section>
-    );
-  }
-  
-  function KpiCard({ label, value, gradient }: Tile) {
-    const [from, to] = gradient;
-    return (
-      <div
-        style={{
-          background: `linear-gradient(180deg, ${from}, ${to})`,
-          color: "#fff",
-          borderRadius: 16,
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow:
-            "0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
-          padding: "18px 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 72,
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              marginBottom: 6,
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: 0.3,
-              opacity: 0.95,
-            }}
-          >
-            {label}
-          </div>
-          <div
-            style={{
-              margin: 0,
-              fontWeight: 800,
-              fontSize: 26,
-              lineHeight: 1,
-            }}
-          >
-            {value}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const bar: React.CSSProperties = {
+    height:64, display:"flex", alignItems:"center", justifyContent:"center",
+    borderRadius:12, background:bg, color:"#0b2540", fontWeight:900, fontSize:24, letterSpacing:0.3
+  };
+  const titleStyle: React.CSSProperties = { fontWeight:800, fontSize:16, marginBottom:8 };
+
+  return (
+    <section style={shell}>
+      <div style={titleStyle}>{title}</div>
+      <div style={bar}>{loading ? "Syncing…" : err ? "Error" : shown}</div>
+    </section>
+  );
+}
