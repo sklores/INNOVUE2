@@ -9,7 +9,7 @@ export default function App() {
       <TopBarShell />
       <KpiTiles />
       <Marquee fallbackText="GCDC Food is great!  •  Reviews 4.4  •  Events this weekend" />
-      <BottomBar />
+      <BottomBar lastSync={someDate} ok={isHealthy} onRefresh={() => /* re-fetch */} />
     </>
   );
 }
