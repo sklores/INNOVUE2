@@ -1,0 +1,28 @@
+/* INNOVUE2: the ONLY global background file */
+:root {
+    --bg: #15171c;   /* dark grey canvas */
+    --text: #e9eaee; /* default text */
+  }
+  
+  html, body, #root {
+    height: 100%;
+  }
+  
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+  }
+  
+  /* Simple page layout helpers for now */
+  .page {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  .section {
+    border-radius: 14px;
+  }
