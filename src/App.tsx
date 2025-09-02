@@ -1,3 +1,4 @@
+// src/App.tsx
 import TopBarShell from "./components/topbar/TopBarShell";
 import KpiTiles     from "./features/kpi/KpiTiles";
 import Marquee      from "./features/marquee/Marquee";
@@ -8,8 +9,8 @@ export default function App() {
     <>
       <TopBarShell />
       <KpiTiles />
-      <Marquee fallbackText="GCDC Food is great!  •  Reviews 4.4  •  Events this weekend" />
-      <BottomBar lastSync={someDate} ok={isHealthy} onRefresh={() => /* re-fetch */} />
+      <Marquee />
+      <BottomBar />
     </>
   );
 }
