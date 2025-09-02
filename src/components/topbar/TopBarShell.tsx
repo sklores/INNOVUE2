@@ -3,8 +3,7 @@ import React from "react";
 import { TOPBAR } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
-
-// Use ONLY this stylesheet per your preference
+import Weather from "./Weather";           // ✅ use WEATHER layer here
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -26,7 +25,16 @@ const TopBarShell: React.FC = () => {
           <SkyLayer />
         </div>
 
-        <div className="topbar-layer" style={{ zIndex: 2, pointerEvents: "none" }}>
+        {/* Weather visuals (for now hard-coded to 'cloudy' so you can see it) */}
+        <div className="topbar-layer" style={{ zIndex: 2 }}>
+          <Weather condition="cloudy" intensity={0.6} />
+          {/*
+            Later: wire this to a weather API fetch by zip and pass the real condition:
+            <Weather condition={weather.condition} intensity={weather.intensity} />
+          */}
+        </div>
+
+        <div className="topbar-layer" style={{ zIndex: 3 }}>
           <div style={{ position: "absolute", right: 10, top: 8 }}>
             <SunMoon size={32} />
           </div>
