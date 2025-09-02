@@ -39,16 +39,16 @@ export const LIGHTHOUSE = {
 
 // ===== Rock base under lighthouse =====
 export const ROCK = {
-  width: 140,        // px width of the rock shelf
-  height: 40,        // px height of the rock shelf
+  width: 130,        // px width of the rock shelf
+  height: 35,        // px height of the rock shelf
   offsetLeft: 0,     // px from LEFT edge of scene
   offsetBottom: 0,   // px from BOTTOM edge of scene
 };
 // ===== GCDC logo (centered by ClientLogo.tsx) =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 90,
-  height: 90,
+  width: 100,
+  height: 100,
   opacity: 0.98,
 };
 
