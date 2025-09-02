@@ -1,21 +1,54 @@
-// src/tuning.ts
-// Centralized values for UI tweaking — easy to change without touching components
+// Central knobs for the scenic Top Bar.
+// Tweak here, not inside components.
 
-// TopBar settings
-export const TOPBAR_HEIGHT = 100; // px
-export const LOGO_SIZE = 48;      // px
-export const SUN_SIZE = 32;       // px
-export const MARGIN = "8px 16px"; // CSS shorthand (top/bottom left/right)
-
-// Animation speeds (ms or px/sec)
-export const SUN_ANIMATION_SPEED = 2000; // ms for transition
-export const CLOUD_SPEED = 40;           // px/sec if clouds added
-
-// Colors
-export const SKY_DAY = "linear-gradient(to top, #87ceeb, #f0f8ff)"; // blue daytime
-export const SKY_NIGHT = "linear-gradient(to top, #0b2540, #2a2c34)"; // dark night
-export const SUN_COLOR = "#FFD700";   // gold
-export const MOON_COLOR = "#F5F3CE";  // pale yellow
-
-// Optional toggles
-export const DEBUG_OUTLINES = false;  // draw borders for layout debugging
+export const TOPBAR = {
+    width: 360,         // fixed painting width (px)
+    height: 130,        // fixed painting height (px)
+    paddingX: 12,
+    cornerRadius: 12,
+  };
+  
+  // Time-of-day
+  export const TIME = {
+    sunriseHour: 6,
+    sunsetHour: 18,
+  };
+  
+  // Sky
+  export const SKY = {
+    nightStarsCount: 25,
+  };
+  
+  // Clouds
+  export const CLOUDS = {
+    density: 2,              // 0..5 (how many cloud groups)
+    baseSpeedSec: 26,        // drift duration
+    varianceSec: 8,
+    opacity: 0.9,
+  };
+  
+  // Birds (linked to Labor KPI)
+  export const BIRDS = {
+    minFlocks: 0,
+    maxFlocks: 3,
+    baseSpeedSec: 10,
+    varianceSec: 4,
+  };
+  
+  // Waves (linked to Sales KPI)
+  export const WAVES = {
+    baseHeight: 6,          // px amplitude at 0 score
+    maxExtraHeight: 12,     // added amplitude at 100 score
+    speedSec: 5,
+  };
+  
+  // Lighthouse
+  export const LIGHTHOUSE = {
+    imgSrc: "/logo/innovuegrey.png",
+    leftOffset: 14,       // px from left
+    bottomOffset: 6,      // px from bottom
+    height: 72,           // px
+    beamSweepSec: 5,      // rotation duration
+    beamWidthDeg: 22,
+    beamColor: "rgba(255, 255, 180, 0.65)",
+  };

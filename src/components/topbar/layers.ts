@@ -1,18 +1,14 @@
-// src/components/topbar/layers.ts
-// Layer stack (back → front) with simple flags
-export type LayerId =
-  | "SkyLayer"
-  | "SunMoon"
-  | "Lighthouse"
-  | "LightBeam"
-  | "Waves"
-  | "Weather";
-
-export const layers: { id: LayerId; visible: boolean }[] = [
-  { id: "SkyLayer",   visible: true },
-  { id: "SunMoon",    visible: true },
-  { id: "Lighthouse", visible: true },
-  { id: "LightBeam",  visible: true },
-  { id: "Waves",      visible: true },
-  { id: "Weather",    visible: true },
-];
+// Visual stacking order (back -> front)
+export const Z = {
+    SKY: 1,
+    SUNMOON: 2,
+    CLOUDS: 3,
+    BIRDS: 4,
+    WAVES: 5,
+    LIGHTHOUSE: 6,
+    UI_TOP: 10,
+  };
+  
+  // Simple helpers
+  export const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  export const to0_100 = (n: number) => Math.max(0, Math.min(100, n));

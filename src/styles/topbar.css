@@ -79,3 +79,20 @@
   position: absolute; right: 12px; top: 12px;
   height: 32px; width: 32px;
 }
+/* === Utility container for the scenic "painting" === */
+.topbar-scene {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;                 /* TopBarShell will also set this inline */
+  background: linear-gradient(#cfe9ff, #eaf6ff); /* safe default fallback */
+}
+
+/* Every visual layer sits absolutely inside the scene */
+.topbar-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* visual-only layers (clicks pass through) */
+}
+
+/* Optional: hide any accidental scrollbars */
+.topbar-scene::-webkit-scrollbar { display: none; }
