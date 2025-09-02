@@ -1,12 +1,16 @@
 // src/components/topbar/TopBarShell.tsx
 import React from "react";
-import { TOPBAR } from "./tuning";
+import { TOPBAR, SUN } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
-import Weather from "./Weather";           // ✅ use WEATHER layer here
+import Weather from "./Weather";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
+  // base anchor is top-right (10px, 8px); apply tuning offsets
+  const sunRight = 10 - (SUN.offsetX ?? 0); // +offsetX moves RIGHT, so reduce "right"
+  const sunTop = 8 + (SUN.offsetY ?? 0);    // +offsetY moves DOWN
+
   return (
     <div style={{ width: TOPBAR.width, padding: "0 12px" }}>
       <div
@@ -25,18 +29,19 @@ const TopBarShell: React.FC = () => {
           <SkyLayer />
         </div>
 
-        {/* Weather visuals (for now hard-coded to 'cloudy' so you can see it) */}
         <div className="topbar-layer" style={{ zIndex: 2 }}>
+          {/* set any of: "clear" | "cloudy" | "rain" | "thunder" | "fog" */}
           <Weather condition="cloudy" intensity={0.6} />
-          {/*
-            Later: wire this to a weather API fetch by zip and pass the real condition:
-            <Weather condition={weather.condition} intensity={weather.intensity} />
-          */}
         </div>
 
-        <div className="topbar-layer" style={{ zIndex: 3 }}>
-          <div style={{ position: "absolute", right: 10, top: 8 }}>
-            <SunMoon size={32} />
+        <div className="topbar-layer" style={{ zIndex: 3, pointerEvents: "none" }}>
+          <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
+            <SunMoon
+              size={SUN.size}
+              raysCount={SUN.raysCount}
+              spinSeconds={SUN.spinSeconds}
+              rayLengthScale={SUN.rayLengthScale}
+            />
           </div>
         </div>
       </div>
