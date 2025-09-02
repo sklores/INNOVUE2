@@ -1,83 +1,71 @@
 // src/components/topbar/Weather.tsx
 import React from "react";
 
-/**
- * Weather layer (single file):
- * - Renders visual effects based on `condition`
- * - Everything is absolutely positioned and self-contained
- *
- * Supported conditions:
- *  - "clear"    -> nothing rendered
- *  - "cloudy"   -> drifting clouds
- *  - "rain"     -> light rain + clouds
- *  - "thunder"  -> rain + clouds + occasional lightning flash
- *  - "fog"      -> soft moving fog bands
- *
- * You can later feed this `condition` from a weather API by zip.
- */
-type Condition = "clear" | "cloudy" | "rain" | "thunder" | "fog";
+export type Condition = "clear" | "cloudy" | "rain" | "thunder" | "fog";
 
 type Props = {
   condition?: Condition;
-  intensity?: number; // 0..1 (optional simple scaler)
+  intensity?: number; // 0..1
+  reducedMotion?: boolean;
 };
 
-const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
-  // clamp intensity
+/**
+ * Minimal, smooth weather visuals:
+ * - cloudy: soft drifting clouds
+ * - rain: falling streaks
+ * - thunder: rain + brief flashes
+ * - fog: layered fog bands
+ * - clear: renders nothing
+ */
+const Weather: React.FC<Props> = ({
+  condition = "clear",
+  intensity = 0.6,
+  reducedMotion,
+}) => {
   const t = Math.max(0, Math.min(1, intensity));
 
-  if (condition === "clear") {
-    return null;
-  }
+  if (condition === "clear") return null;
+
+  const durFactor = reducedMotion ? 1.6 : 1; // slower if reduced motion
 
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-      {/* CLOUDS (used by cloudy / rain / thunder) */}
+      {/* CLOUDS (cloudy / rain / thunder) */}
       {(condition === "cloudy" || condition === "rain" || condition === "thunder") && (
         <>
-          <div
-            style={{
-              position: "absolute",
-              left: "18%",
-              top: 16,
-              width: 80 + 40 * t,
-              height: 24 + 8 * t,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.92)",
-              filter: "blur(0.2px)",
-              animation: `wx-cloud-a ${26 - 8 * t}s linear infinite`,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "56%",
-              top: 22,
-              width: 64 + 36 * t,
-              height: 20 + 8 * t,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.85)",
-              filter: "blur(0.2px)",
-              animation: `wx-cloud-b ${30 - 8 * t}s linear infinite`,
-            }}
-          />
+          {Array.from({ length: 2 + Math.round(t * 2) }).map((_, i) => {
+            const left = 12 + i * 24 + Math.random() * 6;
+            const top = 12 + (i % 2) * 10;
+            const w = 62 + i * 12 + t * 16;
+            const h = 18 + (i % 2) * 6 + t * 6;
+            const dur = (22 + i * 4 - t * 6) * durFactor;
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: `${left}%`,
+                  top,
+                  width: w,
+                  height: h,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.90)",
+                  filter: "blur(0.2px)",
+                  animation: `wx-cloud ${dur}s linear -${Math.random() * dur}s infinite`,
+                }}
+              />
+            );
+          })}
         </>
       )}
 
-      {/* RAIN (used by rain / thunder) */}
+      {/* RAIN (rain / thunder) */}
       {(condition === "rain" || condition === "thunder") && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            overflow: "hidden",
-            opacity: 0.85,
-          }}
-        >
-          {Array.from({ length: 28 + Math.round(20 * t) }).map((_, i) => {
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", opacity: 0.9 }}>
+          {Array.from({ length: 24 + Math.round(t * 24) }).map((_, i) => {
             const left = Math.random() * 100;
             const delay = Math.random() * 2;
-            const dur = 1.2 - 0.4 * t; // faster with intensity
+            const speed = (1.3 - t * 0.4) * durFactor;
             return (
               <span
                 key={i}
@@ -86,10 +74,10 @@ const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
                   left: `${left}%`,
                   top: -10,
                   width: 1.5,
-                  height: 14 + 6 * t,
-                  background: "rgba(160,190,220,0.9)",
+                  height: 12 + t * 8,
+                  background: "rgba(155,185,215,0.95)",
                   transform: "rotate(10deg)",
-                  animation: `wx-raindrop ${dur}s linear ${delay}s infinite`,
+                  animation: `wx-rain ${speed}s linear ${delay}s infinite`,
                 }}
               />
             );
@@ -97,22 +85,22 @@ const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
         </div>
       )}
 
-      {/* LIGHTNING (thunder only) */}
+      {/* THUNDER FLASH */}
       {condition === "thunder" && (
         <div
           style={{
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(ellipse at 30% 20%, rgba(255,255,200,0.55), transparent 40%)",
+              "radial-gradient(ellipse at 28% 18%, rgba(255,255,210,0.55), transparent 40%)",
             mixBlendMode: "screen",
             opacity: 0,
-            animation: "wx-flash 4.5s ease-in-out infinite",
+            animation: "wx-flash 4.6s ease-in-out infinite",
           }}
         />
       )}
 
-      {/* FOG (fog only) */}
+      {/* FOG */}
       {condition === "fog" && (
         <>
           <div
@@ -121,11 +109,10 @@ const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
               left: 0,
               right: 0,
               bottom: 10,
-              height: 38 + 10 * t,
-              background:
-                "linear-gradient(180deg, rgba(230,238,245,0.85), rgba(230,238,245,0.3))",
+              height: 36 + t * 10,
+              background: "linear-gradient(180deg, rgba(230,238,245,0.85), rgba(230,238,245,0.3))",
               filter: "blur(1px)",
-              animation: "wx-fog 18s ease-in-out infinite",
+              animation: `wx-fog ${18 * durFactor}s ease-in-out infinite`,
             }}
           />
           <div
@@ -133,12 +120,11 @@ const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
               position: "absolute",
               left: 0,
               right: 0,
-              bottom: 28,
-              height: 26 + 8 * t,
-              background:
-                "linear-gradient(180deg, rgba(230,238,245,0.65), rgba(230,238,245,0.2))",
+              bottom: 26,
+              height: 24 + t * 8,
+              background: "linear-gradient(180deg, rgba(230,238,245,0.65), rgba(230,238,245,0.2))",
               filter: "blur(1px)",
-              animation: "wx-fog 22s ease-in-out -4s infinite",
+              animation: `wx-fog ${22 * durFactor}s ease-in-out -4s infinite`,
             }}
           />
         </>
@@ -146,23 +132,10 @@ const Weather: React.FC<Props> = ({ condition = "clear", intensity = 0.6 }) => {
 
       {/* keyframes */}
       <style>{`
-        @keyframes wx-cloud-a { 0% { transform: translateX(0) } 100% { transform: translateX(60px) } }
-        @keyframes wx-cloud-b { 0% { transform: translateX(0) } 100% { transform: translateX(60px) } }
-        @keyframes wx-raindrop { 
-          0% { transform: translateY(-10px) rotate(10deg); opacity: 0.9; }
-          100% { transform: translateY(120px) rotate(10deg); opacity: 0.2; }
-        }
-        @keyframes wx-flash {
-          0%, 88%, 100% { opacity: 0; }
-          90% { opacity: .85; }
-          92% { opacity: 0; }
-          94% { opacity: .65; }
-          96% { opacity: 0; }
-        }
-        @keyframes wx-fog {
-          0%, 100% { transform: translateX(0) }
-          50% { transform: translateX(16px) }
-        }
+        @keyframes wx-cloud   { 0% { transform: translateX(0) } 100% { transform: translateX(60px) } }
+        @keyframes wx-rain    { 0% { transform: translateY(-10px) rotate(10deg); opacity: .95 } 100% { transform: translateY(120px) rotate(10deg); opacity: .2 } }
+        @keyframes wx-flash   { 0%,88%,100% { opacity: 0 } 90% { opacity: .85 } 92% { opacity: 0 } 94% { opacity: .65 } 96% { opacity: 0 } }
+        @keyframes wx-fog     { 0%,100% { transform: translateX(0) } 50% { transform: translateX(16px) } }
       `}</style>
     </div>
   );

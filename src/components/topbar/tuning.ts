@@ -93,3 +93,11 @@ export const INNOVUE_FILL = {
   opacity: 0.0,        // start opacity (do not change)
   peakOpacity: 0.85,   // how bright it gets at mid sweep
 };
+// …keep everything you already have above unchanged …
+
+// ===== Weather defaults (can be fed by a ZIP/API later) =====
+export const WEATHER = {
+  enable: true,
+  condition: "clear" as "clear" | "cloudy" | "rain" | "thunder" | "fog",
+  intensity: 0.6,   // 0..1 (more = denser clouds, stronger rain)
+};
