@@ -1,38 +1,70 @@
 // src/components/topbar/TopBarShell.tsx
-import "../../styles/topbar.css";                 // styles live at src/styles/topbar.css
-import { TOPBAR_HEIGHT, LOGO_SIZE, SUN_SIZE, MARGIN, SKY_DAY } from "./tuning"; // tuning is in the same folder
+import "../../styles/topbar.css";
+import {
+  TOPBAR_HEIGHT,
+  LOGO_SIZE,
+  SUN_SIZE,
+  MARGIN,
+  SKY_DAY,
+  SKY_NIGHT,
+  SUN_COLOR,
+  MOON_COLOR,
+} from "./tuning";
+
+function isDay(now = new Date()) {
+  const h = now.getHours();
+  return h >= 6 && h < 18;
+}
 
 export default function TopBarShell() {
+  const day = isDay();
+  const bg = day ? SKY_DAY : SKY_NIGHT;
+  const orbColor = day ? SUN_COLOR : MOON_COLOR;
+  const orbEmoji = day ? "☀️" : "🌙";
+
   return (
     <header
       className="topbar"
       style={{
         height: TOPBAR_HEIGHT,
         padding: MARGIN,
-        // we can drive background from tuning (override the CSS gradient if desired)
-        background: SKY_DAY,
+        background: bg,
       }}
       aria-label="Scenic top bar"
     >
-      {/* Left: Logo (your lighthouse) */}
+      {/* Left: your lighthouse/logo (corrected path: /logos/… NOT /logo/…) */}
       <div className="topbar-logo">
         <img
-          src="/logo/innovuegrey.png"
+          src="/logos/innovuegrey.png"
           alt="Innovue Logo"
           style={{ height: LOGO_SIZE, width: "auto", objectFit: "contain" }}
         />
       </div>
 
-      {/* Center: sky area (we'll add layers/animations later) */}
-      <div className="topbar-sky">
-        {/* keep empty or a small label while we wire sync later */}
-      </div>
+      {/* Center: sky stage (we’ll add layers later) */}
+      <div className="topbar-sky" />
 
-      {/* Right: Sun/Moon placeholder (will be time/weather-driven) */}
-      <div className="topbar-corner" style={{ width: SUN_SIZE, height: SUN_SIZE }}>
-        <span role="img" aria-label="sun" style={{ fontSize: SUN_SIZE * 0.9 }}>
-          ☀️
-        </span>
+      {/* Right: time-aware sun/moon */}
+      <div
+        className="topbar-corner"
+        aria-label={day ? "Sun" : "Moon"}
+        title={day ? "Day" : "Night"}
+        style={{
+          width: SUN_SIZE,
+          height: SUN_SIZE,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 999,
+          background: orbColor,
+          boxShadow: day
+            ? "0 0 12px rgba(255,211,110,0.75)"
+            : "0 0 8px rgba(245,243,206,0.65)",
+          color: "#0b2540",
+          fontSize: Math.round(SUN_SIZE * 0.7),
+        }}
+      >
+        {orbEmoji}
       </div>
     </header>
   );
