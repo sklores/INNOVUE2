@@ -1,9 +1,10 @@
+// src/components/topbar/TopBarShell.tsx
 import React from "react";
 import { TOPBAR } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
 
-// ✅ use ONLY this stylesheet
+// Use ONLY this stylesheet per your preference
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -14,7 +15,7 @@ const TopBarShell: React.FC = () => {
         style={{
           width: TOPBAR.width,
           height: TOPBAR.height,
-          borderRadius: TOPBAR.radius ?? 12,
+          borderRadius: TOPBAR.radius,
           position: "relative",
           overflow: "hidden",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.08)",
