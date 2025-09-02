@@ -13,8 +13,8 @@ export const TIME = {
 
 // ===== Sun knobs =====
 // TopBarShell anchors the sun to TOP-RIGHT.
-// offsetX: negative = move LEFT, positive = move RIGHT
-// offsetY: positive = move DOWN
+// offsetX: negative = LEFT, positive = RIGHT
+// offsetY: positive = DOWN
 export const SUN = {
   size: 46,
   raysCount: 12,
@@ -52,6 +52,12 @@ export const BADGE = {
   width: 100,
   height: 100,
   opacity: 0.98,
+
+  // Fine-tune offsets while staying centered (px):
+  // negative Y = raise; positive Y = lower
+  // negative X = left;  positive X = right
+  centerOffsetY: -8,
+  centerOffsetX: 0,
 };
 
 // ===== Frame (double-mat gallery style) =====
@@ -81,11 +87,11 @@ export const BEAM_FLASH = {
 // ===== INNOVUE text fill area (scene coordinates) =====
 export const INNOVUE_FILL = {
   enable: true,
-  left: 86,   // px from left of scene
-  top: 72,    // px from top of scene
-  width: 170, // px
-  height: 54, // px
-  radius: 10, // corner radius
+  left: 86,
+  top: 72,
+  width: 170,
+  height: 54,
+  radius: 10,
   color: "rgba(255, 247, 180, 0.45)",
   blurPx: 1.2,
   opacity: 0.0,      // start opacity (do not change)
@@ -96,7 +102,7 @@ export const INNOVUE_FILL = {
 export const WEATHER = {
   enable: true,
   mode: "auto" as "auto" | "manual", // "auto" = fetch live via useWeather; "manual" = use condition below
-  zip: "20006",                      // <-- live weather ZIP
+  zip: "20006",                      // live weather ZIP (DC)
   condition: "clear" as "clear" | "cloudy" | "rain" | "thunder" | "fog",
   intensity: 0.6,                    // 0..1 (denser clouds/stronger rain)
 };
