@@ -1,17 +1,24 @@
 // src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL, ROCK, WEATHER
+  TOPBAR,
+  SUN,
+  FRAME,
+  LIGHTHOUSE,
+  BEAM_FLASH,
+  BADGE,
+  INNOVUE_FILL,
+  ROCK,
+  WEATHER,
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
 import Lighthouse from "./Lighthouse";
 import ClientLogo from "./ClientLogo";
 import LightBeam from "./LightBeam";
-import Waves from "./Waves";
+import { WavesBack, WavesFront } from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
-import { useWeather } from "./useWeather";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -30,27 +37,32 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("resize", set);
   }, []);
 
-  // Live weather (if enabled & auto)
-  const live = useWeather(WEATHER.enable && WEATHER.mode === "auto" ? WEATHER.zip : null);
-  const condition = WEATHER.mode === "auto"
-    ? (live.condition)
-    : (WEATHER.condition);
-  const intensity = WEATHER.mode === "auto"
-    ? (live.intensity)
-    : (WEATHER.intensity);
+  // Live / manual weather selection
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
     const t1 = setTimeout(() => setFlash(true), BEAM_FLASH.delayMs);
-    const t2 = setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t2 = setTimeout(
+      () => setFlash(false),
+      BEAM_FLASH.delayMs + BEAM_FLASH.durationMs
+    );
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   // Lighthouse lantern → INNOVUE target
-  const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
+  const lanternX =
+    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
+  const lanternY_fromBottom =
+    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom;
 
   const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
@@ -64,18 +76,20 @@ const TopBarShell: React.FC = () => {
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
 
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   // Placeholder until wired to KPI
   const salesRatio = 0.62;
 
   const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
 
   return (
-    <div style={{ width: "100%", boxSizing: "border-box", paddingInline: 12, marginTop: 6 }}>
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+        paddingInline: 12,
+        marginTop: 6,
+      }}
+    >
       <div
         className="topbar-frame-outer"
         style={{
@@ -99,34 +113,39 @@ const TopBarShell: React.FC = () => {
           <div
             ref={sceneRef}
             className="topbar-scene"
-            style={{ width: "100%", height: TOPBAR.height, position: "relative", overflow: "hidden" }}
+            style={{
+              width: "100%",
+              height: TOPBAR.height,
+              position: "relative",
+              overflow: "hidden",
+            }}
           >
             {/* back -> front */}
             <div className="topbar-layer" style={{ zIndex: 1 }}>
               <SkyLayer />
             </div>
 
-            {/* Weather (auto or manual) */}
+            {/* Weather (toggle via WEATHER.enable) */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
-                  condition={condition}
-                  intensity={intensity}
+                  condition={WEATHER.condition as any}
+                  intensity={WEATHER.intensity}
                   reducedMotion={reducedMotion}
                 />
               )}
             </div>
 
-            {/* Waves at the very bottom */}
+            {/* Waves behind the rock */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
-              <Waves
+              <WavesBack
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
                 salesRatio={salesRatio}
                 reducedMotion={reducedMotion}
               />
             </div>
 
-            {/* Rock base (below lighthouse) */}
+            {/* Rock base */}
             <div className="topbar-layer" style={{ zIndex: 4 }}>
               <div
                 style={{
@@ -142,13 +161,22 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Lighthouse (rotating beam pauses during flash) */}
+            {/* Waves in front of the rock (but behind the lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 5 }}>
+              <WavesFront
+                sceneSize={{ width: sceneW, height: TOPBAR.height }}
+                salesRatio={salesRatio}
+                reducedMotion={reducedMotion}
+              />
+            </div>
+
+            {/* Lighthouse (rotating beam pauses during flash) */}
+            <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
             {/* Sun/Moon (top-right) */}
-            <div className="topbar-layer" style={{ zIndex: 6 }}>
+            <div className="topbar-layer" style={{ zIndex: 7 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
                   size={SUN.size}
@@ -193,9 +221,8 @@ const TopBarShell: React.FC = () => {
               <ClientLogo />
             </div>
 
-            {/* INNOVUE text fill during sweep */}
-            {/* If you're actively using this, keep INNOVUE_FILL in tuning.ts; otherwise disable .enable */}
-            {/* ... (keep your existing INNOVUE_FILL block if desired) ... */}
+            {/* (Optional) INNOVUE fill if you’re still using it */}
+            {/* Keep your INNOVUE_FILL block here if desired */}
           </div>
         </div>
       </div>

@@ -1,11 +1,13 @@
 // src/components/topbar/Waves.tsx
 import React, { useMemo } from "react";
 
-type Props = {
+type CommonProps = {
   sceneSize: { width: number; height: number };
   salesRatio: number; // 0..1
   reducedMotion?: boolean;
 };
+
+type Variant = "back" | "front";
 
 const clamp = (v: number, min: number, max: number) =>
   Math.max(min, Math.min(max, v));
@@ -30,44 +32,49 @@ function buildWavePath(
   return d;
 }
 
-const Waves: React.FC<Props> = ({ sceneSize, salesRatio, reducedMotion }) => {
+/** Internal layer that renders exactly one wave strip (either "back" or "front"). */
+const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
+  sceneSize,
+  salesRatio,
+  reducedMotion,
+  variant,
+}) => {
   const sceneW = sceneSize.width;
   const bandH = 48; // 👈 must match CSS .tb-waves { height: 48px }
   const scrollW = sceneW * 2; // 2x width so it can scroll
-
   const r = clamp(salesRatio ?? 0, 0, 1);
 
-  // amplitude inside a 48px band (keep subtle but visible)
-  const ampBack = reducedMotion ? 4 : Math.round(3 + r * 6); // 3..9 px
-  const ampFront = reducedMotion ? 6 : Math.round(4 + r * 9); // 4..13 px
+  // amplitudes within a 48px band
+  const ampBack = reducedMotion ? 4 : Math.round(3 + r * 6); // 3..9
+  const ampFront = reducedMotion ? 6 : Math.round(4 + r * 9); // 4..13
 
-  // animation speed (lower = faster)
+  // speeds (lower = faster)
   const durBack = reducedMotion ? 18 : 16 - r * 6; // 10..16s
   const durFront = reducedMotion ? 14 : 12 - r * 6; // 6..12s
 
-  // where they sit from the bottom *of the band*
+  // baseline within the band
   const baseBack = 20;
   const baseFront = 10;
 
-  const pathBack = useMemo(
-    () => buildWavePath(scrollW, bandH, ampBack, baseBack),
-    [scrollW, bandH, ampBack, baseBack]
-  );
-  const pathFront = useMemo(
-    () => buildWavePath(scrollW, bandH, ampFront, baseFront),
-    [scrollW, bandH, ampFront, baseFront]
-  );
+  const isBack = variant === "back";
+  const amp = isBack ? ampBack : ampFront;
+  const dur = isBack ? durBack : durFront;
+  const base = isBack ? baseBack : baseFront;
+  const fill = isBack
+    ? "rgba(180, 220, 255, 0.35)"
+    : "rgba(120, 200, 255, 0.55)";
+  const extraClass = isBack ? "" : " tb-wave-front";
 
-  const commonStyle: React.CSSProperties = {
-    animationTimingFunction: "linear",
-  };
+  const path = useMemo(
+    () => buildWavePath(scrollW, bandH, amp, base),
+    [scrollW, bandH, amp, base]
+  );
 
   return (
-    <div className="tb-waves" aria-hidden>
-      {/* Back wave */}
+    <div className={"tb-waves"} aria-hidden>
       <div
-        className="tb-wave-strip"
-        style={{ ...commonStyle, animationDuration: `${durBack}s` }}
+        className={"tb-wave-strip" + extraClass}
+        style={{ animationDuration: `${dur}s`, animationTimingFunction: "linear" }}
       >
         <svg
           viewBox={`0 0 ${scrollW} ${bandH}`}
@@ -75,26 +82,17 @@ const Waves: React.FC<Props> = ({ sceneSize, salesRatio, reducedMotion }) => {
           height={bandH}
           preserveAspectRatio="none"
         >
-          <path d={pathBack} fill="rgba(180, 220, 255, 0.35)" />
-        </svg>
-      </div>
-
-      {/* Front wave */}
-      <div
-        className="tb-wave-strip tb-wave-front"
-        style={{ ...commonStyle, animationDuration: `${durFront}s` }}
-      >
-        <svg
-          viewBox={`0 0 ${scrollW} ${bandH}`}
-          width={scrollW}
-          height={bandH}
-          preserveAspectRatio="none"
-        >
-          <path d={pathFront} fill="rgba(120, 200, 255, 0.55)" />
+          <path d={path} fill={fill} />
         </svg>
       </div>
     </div>
   );
 };
 
-export default Waves;
+// Public exports: use these two so we can place them in different z-index layers.
+export const WavesBack: React.FC<CommonProps> = (p) => (
+  <WavesLayer {...p} variant="back" />
+);
+export const WavesFront: React.FC<CommonProps> = (p) => (
+  <WavesLayer {...p} variant="front" />
+);
