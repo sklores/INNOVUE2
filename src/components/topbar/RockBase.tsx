@@ -7,10 +7,10 @@ type Props = {
 };
 
 /**
- * Foreground rock shelf / peninsula. Stylized to look like weathered granite:
- * - Base shape with soft curvature
- * - Darker shadow lip along the waterline
- * - Subtle top highlight for “wet” sheen
+ * Foreground rock shelf / peninsula (light granite):
+ * - Lighter grey body
+ * - Softer shadow lip
+ * - No highlight line on top
  */
 const RockBase: React.FC<Props> = ({ size }) => {
   const w = size?.width ?? 180;
@@ -24,11 +24,11 @@ const RockBase: React.FC<Props> = ({ size }) => {
       preserveAspectRatio="none"
       aria-hidden
     >
-      {/* gradient for subtle depth */}
+      {/* subtle, light granite gradient */}
       <defs>
-        <linearGradient id="rockFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#444B51" />   {/* cooler, drier top */}
-          <stop offset="100%" stopColor="#2F353A" /> {/* darker, wetter base */}
+        <linearGradient id="rockFillLight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#AAB3BA" />  {/* light grey top */}
+          <stop offset="100%" stopColor="#7F8991" /> {/* mid grey base */}
         </linearGradient>
       </defs>
 
@@ -42,10 +42,10 @@ const RockBase: React.FC<Props> = ({ size }) => {
           `L 0 ${h}`,
           "Z",
         ].join(" ")}
-        fill="url(#rockFill)"
+        fill="url(#rockFillLight)"
       />
 
-      {/* Shadow lip along waterline (gives “shelf” feel) */}
+      {/* Softer shadow lip along waterline (reduced contrast, no hard line) */}
       <path
         d={[
           `M 0 ${h * 0.72}`,
@@ -54,20 +54,10 @@ const RockBase: React.FC<Props> = ({ size }) => {
           `C ${w * 0.60} ${h * 0.78}, ${w * 0.28} ${h * 0.78}, 0 ${h * 0.84}`,
           "Z",
         ].join(" ")}
-        fill="rgba(0,0,0,0.28)"
+        fill="rgba(0,0,0,0.12)"
       />
 
-      {/* Subtle highlight curve on the top plate (wet sheen) */}
-      <path
-        d={[
-          `M ${w * 0.10} ${h * 0.42}`,
-          `C ${w * 0.32} ${h * 0.28}, ${w * 0.52} ${h * 0.22}, ${w * 0.70} ${h * 0.28}`,
-        ].join(" ")}
-        fill="none"
-        stroke="rgba(255,255,255,0.18)"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
+      {/* Removed the top highlight stroke to avoid any visible line */}
     </svg>
   );
 };
