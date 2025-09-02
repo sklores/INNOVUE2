@@ -14,6 +14,6 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
 }/* force the page background to our grey */
 html, body {
-  background: #20242b !important;  /* pick any grey you want */
+  background: #4d5054 !important;  /* pick any grey you want */
   color: #e9eaee;
 }
