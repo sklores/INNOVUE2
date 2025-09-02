@@ -59,6 +59,20 @@ const TopBarShell: React.FC = () => {
     };
   }, []);
 
+  // Listen for global "refresh" to retrigger beam flash
+  useEffect(() => {
+    const onRefresh = () => {
+      setFlash(false);
+      setTimeout(() => setFlash(true), 20);
+      setTimeout(
+        () => setFlash(false),
+        BEAM_FLASH.delayMs + BEAM_FLASH.durationMs + 30
+      );
+    };
+    window.addEventListener("innovue:refresh", onRefresh);
+    return () => window.removeEventListener("innovue:refresh", onRefresh);
+  }, []);
+
   // Lighthouse lantern → INNOVUE target
   const lanternX =
     LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
@@ -77,7 +91,7 @@ const TopBarShell: React.FC = () => {
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
 
-  // Placeholder until wired to KPI: salesRatio for waves
+  // Placeholder until wired to KPI
   const salesRatio = 0.62;
 
   const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
@@ -231,7 +245,7 @@ const TopBarShell: React.FC = () => {
               <ClientLogo />
             </div>
 
-            {/* (Optional) INNOVUE fill effect – keep or disable in tuning */}
+            {/* (Optional) INNOVUE fill effect – enable if desired */}
             {false && (
               <div
                 style={{
