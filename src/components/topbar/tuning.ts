@@ -17,7 +17,7 @@ export const TOPBAR = {
   // - To move RIGHT: use a POSITIVE offsetX
   // - To move DOWN: use a POSITIVE offsetY
   export const SUN = {
-    size: 36,
+    size: 42,
     raysCount: 12,
     spinSeconds: 8,
     rayLengthScale: 0.80,
