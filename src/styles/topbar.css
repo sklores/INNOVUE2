@@ -1,0 +1,42 @@
+/* src/styles/topbar.css */
+
+/* Container */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 120px; /* adjust with TOPBAR_HEIGHT if needed */
+    padding: 0 16px;
+    background: linear-gradient(to top, #d7e6f5, #fdfdfd);
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  /* Logo (left) */
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .topbar-logo img {
+    height: 64px; /* matches LOGO_SIZE default */
+    width: auto;
+  }
+  
+  /* Sky background area (center) */
+  .topbar-sky {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  
+  /* Right corner (sun/moon) */
+  .topbar-corner {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    height: 32px;
+    width: 32px;
+  }

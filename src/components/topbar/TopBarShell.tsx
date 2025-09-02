@@ -1,40 +1,32 @@
 import React from "react";
-import "../App.css"; // make sure global styles apply
-import { TOPBAR_HEIGHT, LOGO_SIZE, SUN_SIZE, MARGIN } from "../tuning";
+import "../../styles/topbar.css";
+import { TOPBAR_HEIGHT, LOGO_SIZE } from "../../tuning";
 
 export default function TopBarShell() {
   return (
-    <div
-      style={{
-        height: TOPBAR_HEIGHT,
-        background: "linear-gradient(to top, #87ceeb, #f0f8ff)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: MARGIN,
-        borderBottom: "1px solid #ccc",
-      }}
-    >
-      {/* Lighthouse/Logo */}
-      <img
-        src="/logo/innovuegrey.png"
-        alt="Innovue Lighthouse"
-        style={{
-          height: LOGO_SIZE,
-          width: "auto",
-          objectFit: "contain",
-        }}
-      />
+    <header className="topbar" style={{ height: TOPBAR_HEIGHT }}>
+      {/* Left: Logo */}
+      <div className="topbar-logo">
+        <img
+          src="/logo/innovuegrey.png"
+          alt="Innovue Logo"
+          style={{ height: LOGO_SIZE }}
+        />
+      </div>
 
-      {/* Sun/Moon placeholder */}
-      <div
-        style={{
-          height: SUN_SIZE,
-          width: SUN_SIZE,
-          borderRadius: "50%",
-          background: "#FFD700", // yellow for sun, swap later
-        }}
-      ></div>
-    </div>
+      {/* Center: Scenic Sky placeholder */}
+      <div className="topbar-sky">
+        {/* Later we’ll add animated clouds, waves, etc. */}
+        <span style={{ fontWeight: 600, color: "#444" }}>Scenic Overlook</span>
+      </div>
+
+      {/* Right: Sun/Moon placeholder */}
+      <div className="topbar-corner">
+        {/* Later replaced by dynamic sun/moon */}
+        <span role="img" aria-label="sun">
+          ☀️
+        </span>
+      </div>
+    </header>
   );
 }
