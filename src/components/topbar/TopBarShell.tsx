@@ -3,18 +3,18 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL, ROCK } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
-import Weather from "./Weather";
 import Lighthouse from "./Lighthouse";
 import ClientLogo from "./ClientLogo";
 import LightBeam from "./LightBeam";
 import Waves from "./Waves";
-import RockBase from "./RockBase";   // ✅ NEW
+import RockBase from "./RockBase";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
+  // Scene size (for waves width)
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -26,6 +26,7 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("resize", set);
   }, []);
 
+  // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -34,6 +35,7 @@ const TopBarShell: React.FC = () => {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // Lighthouse lantern → INNOVUE target
   const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
   const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom;
@@ -43,8 +45,7 @@ const TopBarShell: React.FC = () => {
 
   const dx = targetX - lanternX;
   const dy = targetY - lanternY;
-  const angleRad = Math.atan2(dy, dx);
-  const angleDeg = (angleRad * 180) / Math.PI;
+  const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
 
   const span = BEAM_FLASH.sweepSpanDeg ?? 44;
   const startDeg = angleDeg - span / 2;
@@ -55,7 +56,9 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const salesRatio = 0.62; // placeholder until wired to KPI
+  // Placeholder until wired to KPI
+  const salesRatio = 0.62;
+
   const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
 
   return (
@@ -90,10 +93,6 @@ const TopBarShell: React.FC = () => {
               <SkyLayer />
             </div>
 
-            <div className="topbar-layer" style={{ zIndex: 2 }}>
-              <Weather condition="cloudy" intensity={0.6} />
-            </div>
-
             {/* Waves at the very bottom */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               <Waves
@@ -103,7 +102,7 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* ✅ Rock base (foreground, sits above waves; below lighthouse) */}
+            {/* Rock base (below lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <div
                 style={{
@@ -126,7 +125,7 @@ const TopBarShell: React.FC = () => {
 
             {/* Sun/Moon (top-right) */}
             <div className="topbar-layer" style={{ zIndex: 5 }}>
-              <div style={{ position: "absolute", right: 10 - (SUN.offsetX ?? 0), top: 8 + (SUN.offsetY ?? 0) }}>
+              <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
                   size={SUN.size}
                   raysCount={SUN.raysCount}
