@@ -12,68 +12,57 @@ export const TIME = {
 };
 
 // ===== Sun knobs =====
-// Note: TopBarShell anchors the sun to TOP-RIGHT.
-// offsetX: negative = move LEFT, positive = move RIGHT
-// offsetY: positive = move DOWN
 export const SUN = {
   size: 46,
   raysCount: 12,
   spinSeconds: 8,
   rayLengthScale: 0.8,
-  offsetX: -28,
-  offsetY: 12,
+  // Top-right anchored
+  offsetX: -28, // negative = LEFT
+  offsetY: 12,  // positive = DOWN
 };
 
 // ===== Lighthouse (left) =====
 export const LIGHTHOUSE = {
-  imgSrc: "/logos/innovuegrey.png", // file in /public/logos
-  height: 146,        // px
-  offsetLeft: 10,     // px from left edge of the scene
-  offsetBottom: 2,   // px from bottom edge of the scene
+  imgSrc: "/logos/innovuegrey.png",
+  height: 176,       // px
+  offsetLeft: 14,    // px from left of scene
+  offsetBottom: 10,  // px from bottom of scene
 
-  // rotating beam
   beamOn: true,
-  beamSweepSeconds: 6,                 // lower = faster
-  beamWidthDeg: 26,                    // angular width
+  beamSweepSeconds: 6,
+  beamWidthDeg: 26,
   beamColor: "rgba(255,255,180,0.65)",
   beamBlurPx: 1.2,
 };
 
-// ===== GCDC logo (raw image; no circle wrapper) =====
-// These values are used directly by ClientLogo.tsx
+// ===== GCDC logo (centered by ClientLogo.tsx) =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 76,        // px — size knob
-  height: 76,       // px — size knob
-  offsetLeft: 152,  // px from LEFT edge of the scene
-  offsetTop: 10,    // px from TOP edge of the scene
+  width: 56,
+  height: 56,
   opacity: 0.98,
 };
 
 // ===== Frame (double-mat gallery style) =====
 export const FRAME = {
   strokeColor: "#E6EBF3",
-  strokeWidth: 1,      // outer hairline
-  outerRadius: 16,     // outermost corner radius
-  innerRadius: 12,     // inner scene corner radius
-
-  // Outer mat
-  mat1: {
-    min: 8,            // px
-    max: 16,           // px
-    vw: "3vw",         // responsive term for clamp()
-    color: "#FFFFFF",
-  },
-
-  // Inner mat
-  mat2: {
-    min: 6,
-    max: 12,
-    vw: "2.2vw",
-    color: "#FAFBFD",
-  },
-
-  // Shadows
+  strokeWidth: 1,
+  outerRadius: 16,
+  innerRadius: 12,
+  mat1: { min: 8, max: 16, vw: "3vw", color: "#FFFFFF" },
+  mat2: { min: 6, max: 12, vw: "2.2vw", color: "#FAFBFD" },
   shadow: "0 10px 22px rgba(0,0,0,0.08)",
   sceneInsetShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+};
+
+// ===== Beam flash on refresh =====
+export const BEAM_FLASH = {
+  enable: true,
+  durationMs: 1600,            // total time for sweep + glow
+  delayMs: 50,                 // small delay after mount
+  beamColor: "rgba(255, 247, 180, 0.70)",
+  beamWidthDeg: 34,            // slightly wider than normal sweep
+  glowColor: "rgba(255, 247, 180, 0.95)",
+  glowSpreadPx: 24,            // logo glow thickness
 };
