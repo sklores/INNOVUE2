@@ -1,4 +1,4 @@
-import React from "react";
+// src/components/topbar/TopBarShell.tsx
 import "../../styles/topbar.css";
 import { TOPBAR_HEIGHT, LOGO_SIZE } from "../../tuning";
 
@@ -7,26 +7,16 @@ export default function TopBarShell() {
     <header className="topbar" style={{ height: TOPBAR_HEIGHT }}>
       {/* Left: Logo */}
       <div className="topbar-logo">
-        <img
-          src="/logo/innovuegrey.png"
-          alt="Innovue Logo"
-          style={{ height: LOGO_SIZE }}
-        />
+        <img src="/logo/innovuegrey.png" alt="Innovue Logo" style={{ height: LOGO_SIZE }} />
       </div>
 
-      {/* Center: Scenic Sky placeholder */}
+      {/* Center: Scenic Sky label (we’ll replace with layers later) */}
       <div className="topbar-sky">
-        {/* Later we’ll add animated clouds, waves, etc. */}
         <span style={{ fontWeight: 600, color: "#444" }}>Scenic Overlook</span>
       </div>
 
-      {/* Right: Sun/Moon placeholder */}
-      <div className="topbar-corner">
-        {/* Later replaced by dynamic sun/moon */}
-        <span role="img" aria-label="sun">
-          ☀️
-        </span>
-      </div>
+      {/* Right: Sun/Moon (placeholder for now) */}
+      <div className="topbar-corner" aria-label="Sun/Moon">☀️</div>
     </header>
   );
 }
