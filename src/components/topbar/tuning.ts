@@ -27,7 +27,7 @@ export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png",
   height: 156,       // px
   offsetLeft: 10,    // px from left of scene
-  offsetBottom: 2,   // px from bottom of scene
+  offsetBottom: 22,   // px from bottom of scene
 
   beamOn: true,
   beamSweepSeconds: 6,
@@ -39,16 +39,16 @@ export const LIGHTHOUSE = {
 
 // ===== Rock base under lighthouse =====
 export const ROCK = {
-  width: 190,        // px width of the rock shelf
-  height: 80,        // px height of the rock shelf
+  width: 70,        // px width of the rock shelf
+  height: 20,        // px height of the rock shelf
   offsetLeft: 0,     // px from LEFT edge of scene
   offsetBottom: 0,   // px from BOTTOM edge of scene
 };
 // ===== GCDC logo (centered by ClientLogo.tsx) =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 86,
-  height: 86,
+  width: 96,
+  height: 96,
   opacity: 0.98,
 };
 
