@@ -3,22 +3,22 @@ import React from "react";
 import { BADGE as B } from "./tuning";
 
 /**
- * GCDC logo sized/positioned by a wrapper div.
- * Wrapper width/height come from tuning; the <img> just fills the wrapper.
+ * Always-centered GCDC logo.
+ * - Centers on both axes using left/top 50% + translate(-50%, -50%)
+ * - Size comes from tuning.BADGE.width/height
  */
 const ClientLogo: React.FC = () => {
   return (
     <div
       style={{
         position: "absolute",
-        left: B.offsetLeft,   // px from left edge of the scene
-        top: B.offsetTop,     // px from top edge of the scene
-        width: B.width,       // px
-        height: B.height,     // px
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+        width: B.width,
+        height: B.height,
         pointerEvents: "none",
-        // make sure nothing else sneaks in
-        maxWidth: "none",
-        maxHeight: "none",
+        zIndex: 1,
       }}
     >
       <img
@@ -32,9 +32,6 @@ const ClientLogo: React.FC = () => {
           opacity: B.opacity ?? 1,
           maxWidth: "none",
           maxHeight: "none",
-          transform: "none",
-          boxSizing: "content-box",
-          pointerEvents: "none",
         }}
       />
     </div>
