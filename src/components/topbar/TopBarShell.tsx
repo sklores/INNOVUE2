@@ -11,31 +11,32 @@ const TopBarShell: React.FC = () => {
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
   return (
-    <div style={{ width: "100%" }}>
+    // ✅ Match the KPI tiles "lane": same side grey showing via padding.
+    // Adjust paddingInline if your tiles use a different gutter.
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+        paddingInline: 12,  // <-- same side gutters as tiles
+        marginTop: 6,       // <-- a smidge of top spacing
+      }}
+    >
       {/* === Frame (double-mat) with responsive thickness === */}
       <div
         className="topbar-frame-outer"
         style={{
-          // feed CSS vars from tuning so you can tweak without touching CSS
-          // outer frame
           ["--frame-outer-radius" as any]: `${FRAME.outerRadius}px`,
           ["--frame-stroke" as any]: FRAME.strokeColor,
           ["--frame-stroke-width" as any]: `${FRAME.strokeWidth}px`,
           ["--frame-shadow" as any]: FRAME.shadow,
-
-          // mat 1 (outer)
           ["--mat1-color" as any]: FRAME.mat1.color,
           ["--mat1-min" as any]: `${FRAME.mat1.min}px`,
           ["--mat1-max" as any]: `${FRAME.mat1.max}px`,
           ["--mat1-vw" as any]: FRAME.mat1.vw,
-
-          // mat 2 (inner)
           ["--mat2-color" as any]: FRAME.mat2.color,
           ["--mat2-min" as any]: `${FRAME.mat2.min}px`,
           ["--mat2-max" as any]: `${FRAME.mat2.max}px`,
           ["--mat2-vw" as any]: FRAME.mat2.vw,
-
-          // inner scene
           ["--frame-inner-radius" as any]: `${FRAME.innerRadius}px`,
           ["--scene-inset-shadow" as any]: FRAME.sceneInsetShadow,
         }}
@@ -45,7 +46,7 @@ const TopBarShell: React.FC = () => {
             className="topbar-scene"
             style={{
               width: "100%",
-              height: TOPBAR.height,   // scene stays fixed height (your “painting”)
+              height: TOPBAR.height,   // scene stays fixed height (painting)
               position: "relative",
               overflow: "hidden",
             }}
