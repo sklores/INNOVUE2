@@ -42,7 +42,7 @@ export const TOPBAR = {
   // ===== Center badge (GCDC) =====
   export const BADGE = {
     imgSrc: "/logos/gcdclogo.png", // file in /public/logos
-    size: 122,          // circle diameter (px)
+    size: 60,          // circle diameter (px)
     offsetTop: 10,     // px from top edge (horizontally centered)
     showRing: true,
     ringColor: "#cfd9ea",
