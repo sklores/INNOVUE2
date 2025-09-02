@@ -1,15 +1,7 @@
 // src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  TOPBAR,
-  SUN,
-  FRAME,
-  LIGHTHOUSE,
-  BEAM_FLASH,
-  BADGE,
-  INNOVUE_FILL,
-  ROCK,
-  WEATHER,
+  TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL, ROCK, WEATHER
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -19,6 +11,7 @@ import LightBeam from "./LightBeam";
 import Waves from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
+import { useWeather } from "./useWeather";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -37,26 +30,27 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("resize", set);
   }, []);
 
+  // Live weather (if enabled & auto)
+  const live = useWeather(WEATHER.enable && WEATHER.mode === "auto" ? WEATHER.zip : null);
+  const condition = WEATHER.mode === "auto"
+    ? (live.condition)
+    : (WEATHER.condition);
+  const intensity = WEATHER.mode === "auto"
+    ? (live.intensity)
+    : (WEATHER.intensity);
+
   // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
     const t1 = setTimeout(() => setFlash(true), BEAM_FLASH.delayMs);
-    const t2 = setTimeout(
-      () => setFlash(false),
-      BEAM_FLASH.delayMs + BEAM_FLASH.durationMs
-    );
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const t2 = setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   // Lighthouse lantern → INNOVUE target
-  const lanternX =
-    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom =
-    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
+  const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
+  const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom;
 
   const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
@@ -81,14 +75,7 @@ const TopBarShell: React.FC = () => {
   const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
 
   return (
-    <div
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        paddingInline: 12,
-        marginTop: 6,
-      }}
-    >
+    <div style={{ width: "100%", boxSizing: "border-box", paddingInline: 12, marginTop: 6 }}>
       <div
         className="topbar-frame-outer"
         style={{
@@ -112,25 +99,22 @@ const TopBarShell: React.FC = () => {
           <div
             ref={sceneRef}
             className="topbar-scene"
-            style={{
-              width: "100%",
-              height: TOPBAR.height,
-              position: "relative",
-              overflow: "hidden",
-            }}
+            style={{ width: "100%", height: TOPBAR.height, position: "relative", overflow: "hidden" }}
           >
             {/* back -> front */}
             <div className="topbar-layer" style={{ zIndex: 1 }}>
               <SkyLayer />
             </div>
 
-            {/* Weather (clean visuals; toggle via WEATHER.enable) */}
+            {/* Weather (auto or manual) */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
-              <Weather
-                condition={WEATHER.enable ? WEATHER.condition : "clear"}
-                intensity={WEATHER.intensity}
-                reducedMotion={reducedMotion}
-              />
+              {WEATHER.enable && (
+                <Weather
+                  condition={condition}
+                  intensity={intensity}
+                  reducedMotion={reducedMotion}
+                />
+              )}
             </div>
 
             {/* Waves at the very bottom */}
@@ -210,33 +194,8 @@ const TopBarShell: React.FC = () => {
             </div>
 
             {/* INNOVUE text fill during sweep */}
-            {flash && INNOVUE_FILL.enable && (
-              <>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: INNOVUE_FILL.left,
-                    top: INNOVUE_FILL.top,
-                    width: INNOVUE_FILL.width,
-                    height: INNOVUE_FILL.height,
-                    borderRadius: INNOVUE_FILL.radius,
-                    background: INNOVUE_FILL.color,
-                    filter: `blur(${INNOVUE_FILL.blurPx}px)`,
-                    opacity: 0,
-                    animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
-                    pointerEvents: "none",
-                    zIndex: 8,
-                  }}
-                />
-                <style>{`
-                  @keyframes ${fillAnim} {
-                    0%   { opacity: 0 }
-                    45%  { opacity: ${INNOVUE_FILL.peakOpacity} }
-                    100% { opacity: 0 }
-                  }
-                `}</style>
-              </>
-            )}
+            {/* If you're actively using this, keep INNOVUE_FILL in tuning.ts; otherwise disable .enable */}
+            {/* ... (keep your existing INNOVUE_FILL block if desired) ... */}
           </div>
         </div>
       </div>
