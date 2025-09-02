@@ -331,3 +331,80 @@
 .sel-refresh:hover { background: #e3ecff; }
 .sel-refresh:active { transform: translateY(calc(-50% + 1px)); }
 .sel-refresh-icon { font-size: 16px; line-height: 1; }
+/* ===== Overlapping selectors bar (everything centered) ===== */
+.selectors-wrap {
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: 12px;          /* match KPI gutters */
+  margin-top: -24px;             /* overlap the scenic frame */
+  position: relative;
+  z-index: 20;
+}
+
+.selectors-bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.10),
+    0 1px 0 rgba(0,0,0,0.06);
+}
+
+.selectors-bar--centered {
+  justify-content: center;
+  padding: 0 12px;
+}
+
+/* the centered group (tabs + refresh) */
+.sel-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* tabs */
+.sel-tabs,
+.sel-tab { all: unset; } /* guard against global styles, then re-apply below */
+
+.sel-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: 72px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: #334155;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+}
+.sel-tab--active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+.sel-tab--disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* refresh button (same visual weight as a tab, slightly emphasized) */
+.sel-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #17325d;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sel-refresh:hover { background: #e3ecff; }
+.sel-refresh:active { transform: translateY(1px); }
+.sel-refresh-icon { font-size: 16px; line-height: 1; }

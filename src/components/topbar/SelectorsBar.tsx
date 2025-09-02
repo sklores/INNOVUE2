@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 /**
- * Centered Day/Week/Month tabs with Refresh pinned to the right.
+ * Centered Day/Week/Month + Refresh group
  * Overlaps the scenic frame by ~24px (see CSS).
  */
 const SelectorsBar: React.FC = () => {
@@ -41,18 +41,15 @@ const SelectorsBar: React.FC = () => {
   return (
     <div className="selectors-wrap">
       <div className="selectors-bar selectors-bar--centered">
-        {/* centered tabs */}
-        <div className="sel-tabs">
+        <div className="sel-group">
           <Tab value="day" label="Day" />
           <Tab value="week" label="Week" disabled />
           <Tab value="month" label="Month" disabled />
+          <button className="sel-refresh" onClick={fireRefresh}>
+            <span className="sel-refresh-label">Refresh</span>
+            <span className="sel-refresh-icon" aria-hidden>⟳</span>
+          </button>
         </div>
-
-        {/* refresh pinned to the right */}
-        <button className="sel-refresh sel-refresh--right" onClick={fireRefresh}>
-          <span className="sel-refresh-label">Refresh</span>
-          <span className="sel-refresh-icon" aria-hidden>⟳</span>
-        </button>
       </div>
     </div>
   );
