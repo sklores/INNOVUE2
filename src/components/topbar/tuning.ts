@@ -27,7 +27,7 @@ export const TOPBAR = {
   // ===== Lighthouse (left) =====
   export const LIGHTHOUSE = {
     imgSrc: "/logos/innovuegrey.png", // file in /public/logos
-    height: 176,        // px
+    height: 276,        // px
     offsetLeft: 14,    // px from left edge of the scene
     offsetBottom: 10,  // px from bottom edge of the scene
   
@@ -42,7 +42,7 @@ export const TOPBAR = {
   // ===== Center badge (GCDC) =====
   export const BADGE = {
     imgSrc: "/logos/gcdclogo.png", // file in /public/logos
-    size: 60,          // circle diameter (px)
+    size: 40,          // circle diameter (px)
     offsetTop: 10,     // px from top edge (horizontally centered)
     showRing: true,
     ringColor: "#cfd9ea",
