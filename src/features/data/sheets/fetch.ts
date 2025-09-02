@@ -1,6 +1,11 @@
 // src/features/data/sheets/fetch.ts
-// TEMP STUB: returns no rows so the page mounts without API.
-// We'll wire the real Sheets call next.
+import { buildSheetsURL } from "../../../config/sheetMap";
+
 export async function fetchSheetValues(): Promise<string[][]> {
-    return [];
-  }
+  const url = buildSheetsURL();
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Sheets ${res.status}`);
+  const json = await res.json();
+  // Sheets returns { values: string[][] } or undefined
+  return (json?.values ?? []) as string[][];
+}

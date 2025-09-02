@@ -1,14 +1,8 @@
 // src/features/kpi/KpiTiles.tsx
 import { useEffect, useMemo, useState } from "react";
+import { fetchSheetValues } from "../data/sheets/fetch";
+import { sheetMap } from "../../config/sheetMap";
 
-// ---- TEMP fetch (inline) ----
-// Replace this later with your real Sheets fetch. For now it returns no rows,
-// so the UI mounts cleanly.
-async function fetchSheetValues(): Promise<string[][]> {
-  return []; // plug your working fetch here when ready
-}
-
-// ---- helpers copied from your old code ----
 const toNum = (v: unknown) => {
   const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
   return Number.isFinite(n) ? n : null;
@@ -39,7 +33,6 @@ function computeScore(opts: {
   return value > 0 ? 75 : 25;
 }
 
-// ---- component ----
 export default function KpiTiles() {
   const [rows, setRows] = useState<string[][]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,8 +42,8 @@ export default function KpiTiles() {
     (async () => {
       try {
         setLoading(true); setErr(null);
-        const r = await fetchSheetValues(); // A2:G17
-        setRows(r || []);
+        const r = await fetchSheetValues();
+        setRows(r);
       } catch (e: any) {
         setErr(String(e?.message || e));
       } finally {
@@ -59,11 +52,9 @@ export default function KpiTiles() {
     })();
   }, []);
 
-  // map rows to KPI objects (same as your old page)
-  const kpiRowIdx = [0,1,2,3,4,5,8,9,10];
   const kpis = useMemo(() => {
     const out: KpiRow[] = [];
-    for (const idx of kpiRowIdx) {
+    for (const idx of sheetMap.kpiRows) {
       const r = rows[idx] || [];
       const label = String(r[0] ?? "").trim();
       if (!label) continue;
@@ -74,7 +65,6 @@ export default function KpiTiles() {
     return out;
   }, [rows]);
 
-  // lookups
   const byLabel = useMemo(() => {
     const map = new Map<string, KpiRow>();
     const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
