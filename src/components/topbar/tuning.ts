@@ -98,11 +98,13 @@ export const INNOVUE_FILL = {
   peakOpacity: 0.85, // brightest at mid sweep
 };
 
-// ===== Weather defaults (manual or live) =====
+// ===== Weather defaults =====
+// For clouds right now, keep mode: "manual" + condition: "cloudy".
+// To switch back to LIVE later, change mode to "auto" (ZIP is set to 20006).
 export const WEATHER = {
   enable: true,
-  mode: "auto" as "auto" | "manual", // "auto" = fetch live via useWeather; "manual" = use condition below
-  zip: "20006",                      // live weather ZIP (DC)
-  condition: "clear" as "clear" | "cloudy" | "rain" | "thunder" | "fog",
-  intensity: 0.6,                    // 0..1 (denser clouds/stronger rain)
+  mode: "manual" as "auto" | "manual",   // ← set to "auto" later for live weather
+  zip: "20006",                           // DC (live mode uses this)
+  condition: "cloudy" as "clear" | "cloudy" | "rain" | "thunder" | "fog",
+  intensity: 0.7,                         // 0..1 (denser clouds/stronger rain)
 };
