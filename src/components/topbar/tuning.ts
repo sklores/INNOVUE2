@@ -27,9 +27,9 @@ export const SUN = {
 // ===== Lighthouse (left) =====
 export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png", // file in /public/logos
-  height: 176,        // px
-  offsetLeft: 14,     // px from left edge of the scene
-  offsetBottom: 10,   // px from bottom edge of the scene
+  height: 146,        // px
+  offsetLeft: 10,     // px from left edge of the scene
+  offsetBottom: 2,   // px from bottom edge of the scene
 
   // rotating beam
   beamOn: true,
@@ -43,8 +43,8 @@ export const LIGHTHOUSE = {
 // These values are used directly by ClientLogo.tsx
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 56,        // px — size knob
-  height: 56,       // px — size knob
+  width: 66,        // px — size knob
+  height: 66,       // px — size knob
   offsetLeft: 152,  // px from LEFT edge of the scene
   offsetTop: 10,    // px from TOP edge of the scene
   opacity: 0.98,
