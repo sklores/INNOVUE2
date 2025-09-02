@@ -72,6 +72,11 @@ export const FRAME = {
   sceneInsetShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
 };
 
+// ===== Birds (flying flocks) =====
+// activity: default flocks/speed if you don’t wire a KPI yet (0..1)
+export const BIRDS = {
+  activity: 0.45,   // raise/lower number of flocks & speed
+};
 // ===== Beam flash on refresh =====
 export const BEAM_FLASH = {
   enable: true,

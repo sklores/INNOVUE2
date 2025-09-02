@@ -10,6 +10,7 @@ import {
   INNOVUE_FILL,
   ROCK,
   WEATHER,
+  BIRDS,
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -19,13 +20,14 @@ import LightBeam from "./LightBeam";
 import { WavesBack, WavesFront } from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
+import Birds from "./Birds";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Scene size (for waves width)
+  // Scene size (for waves/birds width)
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -37,7 +39,6 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("resize", set);
   }, []);
 
-  // Live / manual weather selection
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia &&
@@ -76,10 +77,10 @@ const TopBarShell: React.FC = () => {
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
 
-  // Placeholder until wired to KPI
+  // Placeholder until wired to KPI: salesRatio for waves
   const salesRatio = 0.62;
 
-  const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
+  const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
 
   return (
     <div
@@ -125,7 +126,7 @@ const TopBarShell: React.FC = () => {
               <SkyLayer />
             </div>
 
-            {/* Weather (toggle via WEATHER.enable) */}
+            {/* Weather (clouds/rain/fog) */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
@@ -161,7 +162,7 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Waves in front of the rock (but behind the lighthouse) */}
+            {/* Waves in front of the rock */}
             <div className="topbar-layer" style={{ zIndex: 5 }}>
               <WavesFront
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -170,13 +171,22 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Lighthouse (rotating beam pauses during flash) */}
+            {/* Birds (behind lighthouse, above front waves) */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
+              <Birds
+                sceneWidth={sceneW}
+                activity={BIRDS.activity}
+                reducedMotion={reducedMotion}
+              />
+            </div>
+
+            {/* Lighthouse (rotating beam pauses during flash) */}
+            <div className="topbar-layer" style={{ zIndex: 7 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
             {/* Sun/Moon (top-right) */}
-            <div className="topbar-layer" style={{ zIndex: 7 }}>
+            <div className="topbar-layer" style={{ zIndex: 8 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
                   size={SUN.size}
@@ -221,8 +231,25 @@ const TopBarShell: React.FC = () => {
               <ClientLogo />
             </div>
 
-            {/* (Optional) INNOVUE fill if you’re still using it */}
-            {/* Keep your INNOVUE_FILL block here if desired */}
+            {/* (Optional) INNOVUE fill effect – keep or disable in tuning */}
+            {false && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: INNOVUE_FILL.left,
+                  top: INNOVUE_FILL.top,
+                  width: INNOVUE_FILL.width,
+                  height: INNOVUE_FILL.height,
+                  borderRadius: INNOVUE_FILL.radius,
+                  background: INNOVUE_FILL.color,
+                  filter: `blur(${INNOVUE_FILL.blurPx}px)`,
+                  opacity: 0,
+                  animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
+                  pointerEvents: "none",
+                  zIndex: 9,
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
