@@ -1,7 +1,7 @@
-/* src/index.css — single source of global look */
+/* src/index.css — global baseline */
 :root {
-  --bg: #15171c;   /* dark grey */
-  --text: #e9eaee; /* default text */
+  --bg: #15171c;   /* dark grey (not pure black) */
+  --text: #e9eaee;
 }
 
 * { box-sizing: border-box; }
