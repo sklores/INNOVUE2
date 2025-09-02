@@ -1,13 +1,10 @@
 // src/components/topbar/tuning.ts
-
-// Fixed-size "painting" for mobile dashboard
 export const TOPBAR = {
     width: 360,
-    height: 130,
-    radius: 12, // <-- ensure this exists since TopBarShell reads it
+    height: 220,  // ⬅️ was ~130; nearly 2× to match your mock
+    radius: 12,
   };
   
-  // Local time window for day/night
   export const TIME = {
     sunriseHour: 6,
     sunsetHour: 18,
