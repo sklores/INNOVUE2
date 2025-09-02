@@ -7,16 +7,17 @@ import Weather from "./Weather";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
-  // base anchor is top-right (10px, 8px); apply tuning offsets
-  const sunRight = 10 - (SUN.offsetX ?? 0); // +offsetX moves RIGHT, so reduce "right"
-  const sunTop = 8 + (SUN.offsetY ?? 0);    // +offsetY moves DOWN
+  // base anchor is top-right; apply tuning offsets
+  const sunRight = 10 - (SUN.offsetX ?? 0);
+  const sunTop = 8 + (SUN.offsetY ?? 0);
 
   return (
-    <div style={{ width: TOPBAR.width, padding: "0 12px" }}>
+    // ✅ Fill parent width (same as Sales card). Let the page/container control padding.
+    <div style={{ width: "100%" }}>
       <div
         className="topbar-scene"
         style={{
-          width: TOPBAR.width,
+          width: "100%",                 // ⬅️ was TOPBAR.width
           height: TOPBAR.height,
           borderRadius: TOPBAR.radius,
           position: "relative",
@@ -30,7 +31,6 @@ const TopBarShell: React.FC = () => {
         </div>
 
         <div className="topbar-layer" style={{ zIndex: 2 }}>
-          {/* set any of: "clear" | "cloudy" | "rain" | "thunder" | "fog" */}
           <Weather condition="cloudy" intensity={0.6} />
         </div>
 
