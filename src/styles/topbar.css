@@ -144,3 +144,38 @@
 }
 
 .topbar-scene::-webkit-scrollbar { display: none; }
+/* ===== Waves (sit at the very bottom of the scene) ===== */
+.tb-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px; /* must match bandH in Waves.tsx */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tb-wave-strip {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 48px;
+  animation-name: tb-wave-scroll;
+  animation-iteration-count: infinite;
+}
+
+.tb-wave-front {
+  animation-direction: reverse; /* subtle counter motion */
+}
+
+@keyframes tb-wave-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* scroll 2x width svg by half */
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tb-wave-strip {
+    animation-duration: 20s !important;
+  }
+}

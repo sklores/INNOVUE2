@@ -2,36 +2,32 @@
 import React from "react";
 
 type Props = {
-  originX: number;  // px from left within the scene
-  originY: number;  // px from top within the scene
-  sweepDeg: number; // degrees to sweep across (positive = clockwise)
+  originX: number;   // px from left within the scene
+  originY: number;   // px from top within the scene
+  startDeg: number;  // starting angle
+  sweepDeg: number;  // degrees to sweep across (positive = clockwise)
   durationMs: number;
   beamColor: string;
   beamWidthDeg: number;
 };
 
 /**
- * Renders a conic-gradient wedge that rotates around the lighthouse lantern point.
- * We draw a big square anchored at the origin and rotate it.
+ * Conic-gradient wedge that rotates around the lighthouse lantern point.
+ * We render a big square anchored at the origin and rotate it.
  */
 const LightBeam: React.FC<Props> = ({
   originX,
   originY,
+  startDeg,
   sweepDeg,
   durationMs,
   beamColor,
   beamWidthDeg,
 }) => {
   const animName = `iv-beam-${Math.round(Math.random() * 1e6)}`;
+
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 9, // under the centered logo (which we’ll put at 10)
-      }}
-    >
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 9 }}>
       <div
         style={{
           position: "absolute",
@@ -39,7 +35,8 @@ const LightBeam: React.FC<Props> = ({
           top: originY,
           width: 800,
           height: 800,
-          transformOrigin: "0 0", // rotate around top-left corner (the origin)
+          transformOrigin: "0 0",
+          transform: `rotate(${startDeg}deg)`,
           animation: `${animName} ${durationMs}ms ease-out 1`,
           mixBlendMode: "screen",
           opacity: 0.98,

@@ -1,19 +1,20 @@
 // src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE } from "./tuning";
+import { TOPBAR, SUN, FRAME, LIGHTHOUSE, BEAM_FLASH, BADGE, INNOVUE_FILL } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
 import Weather from "./Weather";
 import Lighthouse from "./Lighthouse";
 import ClientLogo from "./ClientLogo";
 import LightBeam from "./LightBeam";
+import Waves from "./Waves";            // ✅ NEW
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Measure scene width so we can aim the beam at center
+  // Measure scene width so we can compute sizes for waves/beam targeting
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -34,24 +35,38 @@ const TopBarShell: React.FC = () => {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Compute lighthouse lantern point (approx) in scene coords
+  // Lighthouse lantern point (approx) in scene coords
   const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
   const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom; // convert to "from top"
 
-  // Target: center of the scene (and the centered GCDC logo)
-  const centerX = sceneW / 2;
-  const centerY = TOPBAR.height / 2;
+  // Target: INNOVUE text rectangle center (from tuning)
+  const targetRect = INNOVUE_FILL;
+  const targetX = targetRect.left + targetRect.width / 2;
+  const targetY = targetRect.top + targetRect.height / 2;
 
-  // Angle from lantern to center
-  const dx = centerX - lanternX;
-  const dy = centerY - lanternY;
-  const angleRad = Math.atan2(dy, dx);           // canvas-style angle from +x
-  const angleDeg = (angleRad * 180) / Math.PI;   // degrees
+  // Angle from lantern to target (deg)
+  const dx = targetX - lanternX;
+  const dy = targetY - lanternY;
+  const angleRad = Math.atan2(dy, dx);
+  const angleDeg = (angleRad * 180) / Math.PI;
 
-  // We’ll sweep ~45 degrees across the target angle
-  const sweepStartDeg = angleDeg - 22;
-  const sweepTotalDeg = 44;
+  // Sweep centered around angleDeg
+  const span = BEAM_FLASH.sweepSpanDeg ?? 44;
+  const startDeg = angleDeg - span / 2;
+  const sweepDeg = span;
+
+  // Reduced motion hint
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Temporary sales value (0..1). We’ll wire to KPI later.
+  const salesRatio = 0.62;
+
+  // Fill animation name (for opacity ramp)
+  const fillAnim = `iv-fill-${Math.round(Math.random() * 1e6)}`;
 
   return (
     <div
@@ -101,9 +116,18 @@ const TopBarShell: React.FC = () => {
               <Weather condition="cloudy" intensity={0.6} />
             </div>
 
+            {/* ✅ Waves at the very bottom */}
+            <div className="topbar-layer" style={{ zIndex: 2 }}>
+              <Waves
+                sceneSize={{ width: sceneW, height: TOPBAR.height }}
+                salesRatio={salesRatio}
+                reducedMotion={reducedMotion}
+              />
+            </div>
+
             {/* lighthouse (left) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
-              <Lighthouse />
+              <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
             {/* sun/moon (top-right) */}
@@ -118,21 +142,22 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* beam flash on page refresh */}
+            {/* beam flash on page refresh — sweep aimed at INNOVUE text */}
             {flash && (
               <LightBeam
                 originX={lanternX}
                 originY={lanternY}
-                sweepDeg={sweepTotalDeg}
+                startDeg={startDeg}
+                sweepDeg={sweepDeg}
                 durationMs={BEAM_FLASH.durationMs}
                 beamColor={BEAM_FLASH.beamColor}
                 beamWidthDeg={BEAM_FLASH.beamWidthDeg}
               />
             )}
 
-            {/* centered GCDC logo */}
+            {/* centered GCDC logo + optional glow */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              {/* glow during flash */}
+              {/* soft glow on the logo during flash */}
               {flash && (
                 <div
                   style={{
@@ -151,6 +176,35 @@ const TopBarShell: React.FC = () => {
               )}
               <ClientLogo />
             </div>
+
+            {/* INNOVUE text fill during sweep */}
+            {flash && INNOVUE_FILL.enable && (
+              <>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: INNOVUE_FILL.left,
+                    top: INNOVUE_FILL.top,
+                    width: INNOVUE_FILL.width,
+                    height: INNOVUE_FILL.height,
+                    borderRadius: INNOVUE_FILL.radius,
+                    background: INNOVUE_FILL.color,
+                    filter: `blur(${INNOVUE_FILL.blurPx}px)`,
+                    opacity: 0,
+                    animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
+                    pointerEvents: "none",
+                    zIndex: 8,
+                  }}
+                />
+                <style>{`
+                  @keyframes ${fillAnim} {
+                    0%   { opacity: 0 }
+                    45%  { opacity: ${INNOVUE_FILL.peakOpacity} }
+                    100% { opacity: 0 }
+                  }
+                `}</style>
+              </>
+            )}
           </div>
         </div>
       </div>
