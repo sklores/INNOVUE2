@@ -27,7 +27,7 @@ export const TOPBAR = {
   // ===== Lighthouse (left) =====
   export const LIGHTHOUSE = {
     imgSrc: "/logos/innovuegrey.png", // file in /public/logos
-    height: 276,        // px
+    height: 176,        // px
     offsetLeft: 14,    // px from left edge of the scene
     offsetBottom: 10,  // px from bottom edge of the scene
   
