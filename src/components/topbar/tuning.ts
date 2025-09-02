@@ -15,10 +15,10 @@ export const TOPBAR = {
   
   // 🔧 Sun tuning knobs (defaults)
   export const SUN = {
-    size: 36,           // px diameter of the sun core
-    raysCount: 12,      // how many rays around the sun
+    size: 46,           // px diameter of the sun core
+    raysCount: 10,      // how many rays around the sun
     spinSeconds: 8,     // how long for a full rotation (lower = faster)
     rayLengthScale: 0.80, // 0..1 proportion of size used for ray length
     offsetX: 0,         // px: + moves RIGHT (applied in TopBarShell)
-    offsetY: 0,         // px: + moves DOWN  (applied in TopBarShell)
+    offsetY: 2,         // px: + moves DOWN  (applied in TopBarShell)
   };
