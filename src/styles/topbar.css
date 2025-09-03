@@ -11,8 +11,8 @@
     border: var(--frame-stroke-width, 1px) solid var(--frame-stroke, #E6EBF3);
     background: var(--mat1-color, #ffffff);
     box-shadow: var(--frame-shadow, 0 10px 22px rgba(0,0,0,0.08));
-    /* responsive outer mat thickness */
-    padding: clamp(var(--mat1-min, 8px), var(--mat1-vw, 3vw), var(--mat1-max, 16px));
+    /* SLIM outer mat */
+    padding: clamp(var(--mat1-min, 4px), var(--mat1-vw, 1.4vw), var(--mat1-max, 8px));
     position: relative;
   }
   
@@ -20,8 +20,8 @@
     border-radius: calc(var(--frame-outer-radius, 16px) - 2px);
     background: var(--mat2-color, #FAFBFD);
     overflow: hidden;
-    /* responsive inner mat thickness */
-    padding: clamp(var(--mat2-min, 6px), var(--mat2-vw, 2.2vw), var(--mat2-max, 12px));
+    /* SLIM inner mat */
+    padding: clamp(var(--mat2-min, 3px), var(--mat2-vw, 1vw), var(--mat2-max, 6px));
     position: relative;
   }
   
@@ -80,7 +80,7 @@
     width: 100%;
     box-sizing: border-box;
     padding-inline: 12px;      /* match KPI gutters */
-    margin-top: -24px;         /* overlap scenic frame */
+    margin-top: -28px;         /* increased overlap to slim white band */
     position: relative;
     z-index: 20;               /* above scene */
   }

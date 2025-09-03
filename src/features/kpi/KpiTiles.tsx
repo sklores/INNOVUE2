@@ -83,7 +83,7 @@ export default function KpiTiles() {
   const netProfit = byLabel.get("net profit","profit");
 
   return (
-    <section style={{ padding: 12 }}>
+    <section style={{ padding: 10 }}>
       <Card title="Sales" row={sales} higherIsBetter loading={loading} err={err} />
       <Row2>
         <Card title="COGS"  row={cogs}  higherIsBetter={false} loading={loading} err={err} />
@@ -104,7 +104,7 @@ export default function KpiTiles() {
 
 function Row2({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginTop:12 }}>
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:10 }}>
       {children}
     </div>
   );
@@ -122,13 +122,13 @@ function Card({
 
   const shell: React.CSSProperties = {
     background:"#fff", color:"#2A2C34", border:"1px solid #E1E2E6",
-    borderRadius:16, padding:14, boxShadow:"0 2px 10px rgba(0,0,0,0.18)", marginTop:12
+    borderRadius:16, padding:14, boxShadow:"0 2px 10px rgba(0,0,0,0.18)", marginTop:8
   };
   const bar: React.CSSProperties = {
     height:64, display:"flex", alignItems:"center", justifyContent:"center",
     borderRadius:12, background:bg, color:"#0b2540", fontWeight:900, fontSize:24, letterSpacing:0.3
   };
-  const titleStyle: React.CSSProperties = { fontWeight:800, fontSize:16, marginBottom:8 };
+  const titleStyle: React.CSSProperties = { fontWeight:800, fontSize:16, marginBottom:6 };
 
   return (
     <section style={shell}>

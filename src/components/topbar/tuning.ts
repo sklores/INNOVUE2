@@ -61,22 +61,38 @@ export const BADGE = {
 };
 
 // ===== Frame (double-mat gallery style) =====
+// Option A: SLIM mats so the scenic canvas fills ~90% visually
 export const FRAME = {
   strokeColor: "#E6EBF3",
   strokeWidth: 1,
   outerRadius: 16,
   innerRadius: 12,
-  mat1: { min: 8, max: 16, vw: "3vw", color: "#FFFFFF" },
-  mat2: { min: 6, max: 12, vw: "2.2vw", color: "#FAFBFD" },
+
+  // Outer mat — near page bg so it visually melts away
+  mat1: {
+    min: 4,               // slimmer than 8–16
+    max: 8,
+    vw: "1.4vw",
+    color: "#E6E9F0",
+  },
+
+  // Inner mat — keep white and slim for a crisp edge
+  mat2: {
+    min: 3,               // slimmer than 6–12
+    max: 6,
+    vw: "1vw",
+    color: "#FAFBFD",
+  },
+
   shadow: "0 10px 22px rgba(0,0,0,0.08)",
   sceneInsetShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
 };
 
 // ===== Birds (flying flocks) =====
-// activity: default flocks/speed if you don’t wire a KPI yet (0..1)
 export const BIRDS = {
-  activity: 0.45,   // raise/lower number of flocks & speed
+  activity: 0.45,   // raise/lower number of flocks & speed (0..1)
 };
+
 // ===== Beam flash on refresh =====
 export const BEAM_FLASH = {
   enable: true,
@@ -108,8 +124,8 @@ export const INNOVUE_FILL = {
 // To switch back to LIVE later, change mode to "auto" (ZIP is set to 20006).
 export const WEATHER = {
   enable: true,
-  mode: "manual" as "auto" | "manual",   // ← set to "auto" later for live weather
-  zip: "20006",                           // DC (live mode uses this)
+  mode: "manual" as "auto" | "manual",
+  zip: "20006",
   condition: "cloudy" as "clear" | "cloudy" | "rain" | "thunder" | "fog",
-  intensity: 0.7,                         // 0..1 (denser clouds/stronger rain)
+  intensity: 0.7,
 };
