@@ -1,12 +1,15 @@
 /* src/index.css */
 
-/* base reset (keeps your current fonts if any were set) */
+/* App theme tokens */
 :root {
-  --page-bg: #eef1f5;        /* ⬅️ lighter grey */
-  --text-color: #0f172a;     /* slate-900 */
+  /* Slightly darker than before */
+  --page-bg: #e6e9f0;
+  --text-color: #0f172a; /* slate-900 */
 }
 
+/* Base reset */
 * { box-sizing: border-box; }
+
 html, body, #root {
   height: 100%;
 }
@@ -14,14 +17,31 @@ html, body, #root {
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--page-bg);
+
+  /* NEW: Manrope across the app */
+  font-family: "Manrope", Inter, system-ui, -apple-system, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+               "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   color: var(--text-color);
+  background: var(--page-bg);
+
+  /* Crisp text */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Align numbers for KPIs */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* keep images crisp */
+/* Keep images tidy */
 img { max-width: 100%; display: block; }
 
-/* optional: smooth scrolling for long dashboards */
+/* Smooth scroll is nice for a mobile app feel */
 html { scroll-behavior: smooth; }
+
+/* Ensure buttons/inputs inherit the font */
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
