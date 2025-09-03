@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 
 /**
- * Centered Day/Week/Month + Refresh group
- * Overlaps the scenic frame by ~24px (see CSS).
+ * Centered Day / Week / Month + Refresh
+ * Overlaps the scenic frame by ~24px (styled in CSS).
  */
 const SelectorsBar: React.FC = () => {
   const [range, setRange] = useState<"day" | "week" | "month">("day");
@@ -30,8 +30,9 @@ const SelectorsBar: React.FC = () => {
           (disabled ? " sel-tab--disabled" : "")
         }
         aria-pressed={active}
-        onClick={() => !disabled && setRange(value)}
         disabled={!!disabled}
+        onClick={() => !disabled && setRange(value)}
+        type="button"
       >
         {label}
       </button>
@@ -45,7 +46,10 @@ const SelectorsBar: React.FC = () => {
           <Tab value="day" label="Day" />
           <Tab value="week" label="Week" disabled />
           <Tab value="month" label="Month" disabled />
-          <button className="sel-refresh" onClick={fireRefresh}>
+
+          <span className="sel-divider" aria-hidden>·</span>
+
+          <button className="sel-refresh" onClick={fireRefresh} type="button">
             <span className="sel-refresh-label">Refresh</span>
             <span className="sel-refresh-icon" aria-hidden>⟳</span>
           </button>

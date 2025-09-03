@@ -1,410 +1,141 @@
-/* Container */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 120px;
-  padding: 0 12px;
-  background: linear-gradient(to top, #d7e6f5, #fdfdfd);
-  border-bottom: 1px solid #e0e0e0;
-}
-
-/* Left mark */
-.topbar-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 84px;
-}
-.topbar-logo img { height: 64px; width: auto; }
-
-/* Sky strip */
-.topbar-sky {
-  position: relative;
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 10px;
-}
-
-/* gradient sky paint */
-.sky-paint {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, #aee0ff 0%, #cde9ff 55%, #eaf5ff 100%);
-}
-
-/* simple lighthouse silhouette (left) */
-.lighthouse {
-  position: absolute; left: 18px; bottom: 8px;
-  width: 36px; height: 64px;
-  background: linear-gradient(#b8c6d8, #9fb0c8);
-  border-radius: 3px 3px 2px 2px;
-  box-shadow: inset 0 8px 0 rgba(255,255,255,0.35);
-  transform: skewX(-3deg);
-}
-
-/* clouds */
-.cloud {
-  position: absolute; top: 16px;
-  width: 80px; height: 24px; border-radius: 999px;
-  background: rgba(255,255,255,0.9);
-  filter: blur(0.2px);
-  animation: cloud-drift 24s linear infinite;
-}
-.cloud-a { left: 28%; animation-delay: -4s; opacity: .9; }
-.cloud-b { left: 58%; top: 22px; width: 64px; height: 20px; opacity: .8; animation-duration: 30s; }
-
-@keyframes cloud-drift {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(60px); }
-}
-
-/* center badge (GCDC circle) */
-.center-badge-wrap {
-  position: absolute; top: 18px; left: 50%;
-  transform: translateX(-50%);
-}
-.gcdc-badge {
-  width: 72px; height: 72px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-weight: 700; letter-spacing: .5px;
-  background: radial-gradient( #ffffff 0%, #eef5ff 70% );
-  border: 2px solid #cfd9ea;
-  color: #7a8aa8;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-}
-
-/* Sun/Moon corner holder */
-.topbar-corner {
-  position: absolute; right: 12px; top: 12px;
-  height: 32px; width: 32px;
-}
-/* === Utility container for the scenic "painting" === */
-.topbar-scene {
-  position: relative;
-  overflow: hidden;
-  border-radius: 12px;                 /* TopBarShell will also set this inline */
-  background: linear-gradient(#cfe9ff, #eaf6ff); /* safe default fallback */
-}
-
-/* Every visual layer sits absolutely inside the scene */
-.topbar-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none; /* visual-only layers (clicks pass through) */
-}
-
-/* Optional: hide any accidental scrollbars */
-.topbar-scene::-webkit-scrollbar { display: none; }
-/* ====== Framed scene (double-mat) ====== */
-.topbar-frame-outer {
-  width: 100%;
-  display: block;
-  box-sizing: border-box;
-  border-radius: var(--frame-outer-radius, 16px);
-  border: var(--frame-stroke-width, 1px) solid var(--frame-stroke, #E6EBF3);
-  background: var(--mat1-color, #fff);
-  box-shadow: var(--frame-shadow, 0 10px 22px rgba(0,0,0,0.08));
-  overflow: hidden; /* clip mats */
-  /* responsive outer mat thickness */
-  padding: clamp(var(--mat1-min, 8px), var(--mat1-vw, 3vw), var(--mat1-max, 16px));
-}
-
-.topbar-frame-mat2 {
-  border-radius: calc(var(--frame-outer-radius, 16px) - 2px);
-  background: var(--mat2-color, #FAFBFD);
-  overflow: hidden;
-  /* responsive inner mat thickness */
-  padding: clamp(var(--mat2-min, 6px), var(--mat2-vw, 2.2vw), var(--mat2-max, 12px));
-  /* subtle top highlight across mat */
-  position: relative;
-}
-.topbar-frame-mat2::before {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0; height: 10px;
-  background: linear-gradient(to bottom, rgba(255,255,255,.6), rgba(255,255,255,0));
-  pointer-events: none;
-}
-
-/* Your existing scene container still applies inside the mats */
-.topbar-scene {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--frame-inner-radius, 12px);
-  background: linear-gradient(#cfe9ff, #eaf6ff); /* fallback */
-  box-shadow: var(--scene-inset-shadow, inset 0 1px 0 rgba(255,255,255,.6));
-}
-
-/* Absolute layers */
-.topbar-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.topbar-scene::-webkit-scrollbar { display: none; }
-/* ===== Waves (sit at the very bottom of the scene) ===== */
-.tb-waves {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 48px; /* must match bandH in Waves.tsx */
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.tb-wave-strip {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 48px;
-  animation-name: tb-wave-scroll;
-  animation-iteration-count: infinite;
-}
-
-.tb-wave-front {
-  animation-direction: reverse; /* subtle counter motion */
-}
-
-@keyframes tb-wave-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* scroll 2x width svg by half */
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .tb-wave-strip {
-    animation-duration: 20s !important;
+/* =========================
+   Scenic Top Bar — Core
+   ========================= */
+   .topbar-scene {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(#cfe9ff, #eaf6ff); /* fallback */
+    box-shadow: var(--scene-inset-shadow, inset 0 1px 0 rgba(255,255,255,.6));
   }
-}
-/* ===== Overlapping selectors bar (Refresh + Day/Week/Month) ===== */
-.selectors-wrap {
-  width: 100%;
-  box-sizing: border-box;
-  /* match KPI gutters */
-  padding-inline: 12px;
-  /* pull upward to overlap the scenic frame by ~24px */
-  margin-top: -24px;
-  position: relative;
-  z-index: 20; /* above scene */
-}
-
-.selectors-bar {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.10),
-    0 1px 0 rgba(0,0,0,0.06);
-  padding: 0 10px;
-}
-
-/* left: refresh button */
-.sel-refresh {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border: none;
-  border-radius: 8px;
-  background: #f2f6ff;
-  color: #1f3b6b;
-  font-weight: 600;
-  cursor: pointer;
-}
-.sel-refresh:hover { background: #e8f0ff; }
-.sel-refresh:active { transform: translateY(1px); }
-.sel-refresh-icon { font-size: 16px; line-height: 1; }
-
-/* middle spacer pushes tabs to the right if needed */
-.sel-spacer { flex: 1; }
-
-/* right: tabs */
-.sel-tabs {
-  display: inline-flex;
-  gap: 6px;
-  background: #f7f9fc;
-  border-radius: 10px;
-  padding: 4px;
-}
-.sel-tab {
-  height: 32px;
-  min-width: 64px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #334155;
-  font-weight: 700;
-  letter-spacing: .2px;
-  cursor: pointer;
-}
-.sel-tab--active {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
-}
-.sel-tab--disabled {
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-/* ===== Overlapping selectors bar (centered tabs, refresh on right) ===== */
-.selectors-wrap {
-  width: 100%;
-  box-sizing: border-box;
-  padding-inline: 12px;          /* match KPI gutters */
-  margin-top: -24px;             /* overlap the scenic frame */
-  position: relative;
-  z-index: 20;
-}
-
-.selectors-bar {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.10),
-    0 1px 0 rgba(0,0,0,0.06);
-  position: relative;
-}
-
-/* centered variant: tabs centered; refresh pinned right */
-.selectors-bar--centered {
-  justify-content: center;
-  padding: 0 56px;               /* space so refresh doesn't overlap tabs */
-}
-
-.sel-tabs {
-  display: inline-flex;
-  gap: 6px;
-  background: #f7f9fc;
-  border-radius: 10px;
-  padding: 4px;
-}
-
-.sel-tab {
-  height: 32px;
-  min-width: 72px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #334155;
-  font-weight: 700;
-  letter-spacing: .2px;
-  cursor: pointer;
-}
-.sel-tab--active {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
-}
-.sel-tab--disabled {
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-
-/* refresh button pinned to the right */
-.sel-refresh {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border: none;
-  border-radius: 8px;
-  background: #eef4ff;
-  color: #17325d;
-  font-weight: 700;
-  cursor: pointer;
-}
-.sel-refresh:hover { background: #e3ecff; }
-.sel-refresh:active { transform: translateY(calc(-50% + 1px)); }
-.sel-refresh-icon { font-size: 16px; line-height: 1; }
-/* ===== Overlapping selectors bar (everything centered) ===== */
-.selectors-wrap {
-  width: 100%;
-  box-sizing: border-box;
-  padding-inline: 12px;          /* match KPI gutters */
-  margin-top: -24px;             /* overlap the scenic frame */
-  position: relative;
-  z-index: 20;
-}
-
-.selectors-bar {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.10),
-    0 1px 0 rgba(0,0,0,0.06);
-}
-
-.selectors-bar--centered {
-  justify-content: center;
-  padding: 0 12px;
-}
-
-/* the centered group (tabs + refresh) */
-.sel-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* tabs */
-.sel-tabs,
-.sel-tab { all: unset; } /* guard against global styles, then re-apply below */
-
-.sel-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  min-width: 72px;
-  padding: 0 14px;
-  border-radius: 8px;
-  background: #f7f9fc;
-  color: #334155;
-  font-weight: 700;
-  letter-spacing: .2px;
-  cursor: pointer;
-}
-.sel-tab--active {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
-}
-.sel-tab--disabled {
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-
-/* refresh button (same visual weight as a tab, slightly emphasized) */
-.sel-refresh {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 8px;
-  background: #eef4ff;
-  color: #17325d;
-  font-weight: 700;
-  cursor: pointer;
-}
-.sel-refresh:hover { background: #e3ecff; }
-.sel-refresh:active { transform: translateY(1px); }
-.sel-refresh-icon { font-size: 16px; line-height: 1; }
+  .topbar-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .topbar-scene::-webkit-scrollbar { display: none; }
+  
+  /* =========================
+     Waves (shared)
+     ========================= */
+  .tb-waves {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 48px; /* must match band height in Waves.tsx */
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .tb-wave-strip {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 48px;
+    animation-name: tb-wave-scroll;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+  }
+  .tb-wave-front { animation-direction: reverse; }
+  @keyframes tb-wave-scroll {
+    0%   { transform: translateX(0) }
+    100% { transform: translateX(-50%) }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tb-wave-strip { animation-duration: 20s !important; }
+  }
+  
+  /* =========================
+     Overlapping Selectors Bar
+     (centered tabs + centered Refresh)
+     ========================= */
+  .selectors-wrap {
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 12px;      /* match KPI gutters */
+    margin-top: -24px;         /* overlap scenic frame */
+    position: relative;
+    z-index: 20;               /* above scene */
+  }
+  
+  .selectors-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow:
+      0 6px 14px rgba(0,0,0,0.10),
+      0 1px 0 rgba(0,0,0,0.06);
+  }
+  
+  .selectors-bar--centered {
+    justify-content: center;
+    padding: 0 12px;
+  }
+  
+  /* center group: tabs + divider + refresh */
+  .sel-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  /* tabs */
+  .sel-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 72px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: #f7f9fc;
+    color: #334155;
+    font-weight: 700;
+    letter-spacing: .2px;
+    cursor: pointer;
+  }
+  .sel-tab--active {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  }
+  .sel-tab--disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+  
+  /* divider dot between tabs and refresh */
+  .sel-divider {
+    display: inline-block;
+    width: 10px;
+    text-align: center;
+    color: #c6d0e1;
+    user-select: none;
+  }
+  
+  /* refresh (same visual weight as tab, slight emphasis) */
+  .sel-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: #eef4ff;
+    color: #17325d;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .sel-refresh:hover { background: #e3ecff; }
+  .sel-refresh:active { transform: translateY(1px); }
+  .sel-refresh-icon { font-size: 16px; line-height: 1; }
+  
+  /* small screens: keep it balanced */
+  @media (max-width: 380px) {
+    .sel-tab { min-width: 64px; padding: 0 10px; }
+    .sel-refresh { padding: 0 10px; }
+    .selectors-bar--centered { padding: 0 8px; }
+  }
