@@ -21,6 +21,7 @@ import { WavesBack, WavesFront } from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
 import Birds from "./Birds";
+import GlowLogo from "./GlowLogo";  // ⬅️ NEW
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -224,24 +225,11 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* Centered GCDC logo + optional glow */}
+            {/* Centered client logo with warm constant glow */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              {flash && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: BADGE.width,
-                    height: BADGE.height,
-                    borderRadius: 8,
-                    boxShadow: `0 0 ${BEAM_FLASH.glowSpreadPx}px ${BEAM_FLASH.glowColor}`,
-                    filter: "blur(0.2px)",
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
+              {/* Subtle constant halo behind the logo */}
+              <GlowLogo />
+              {/* The logo itself */}
               <ClientLogo />
             </div>
 
