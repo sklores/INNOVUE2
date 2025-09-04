@@ -1,7 +1,6 @@
-// src/components/bottombar/BottomBar.tsx
 import React, { useMemo } from "react";
 import { WEATHER } from "../../components/topbar/tuning";
-// If your hook lives elsewhere, adjust this import:
+// If your hook lives elsewhere, adjust this import path:
 import { useWeather } from "../../components/topbar/useWeather";
 
 type WxCond = "clear" | "cloudy" | "rain" | "thunder" | "fog";
@@ -24,42 +23,68 @@ const formatDateTime = () => {
   return { date, time };
 };
 
+// Attempt to read temperature from the live weather hook with several common keys.
+// If not present, returns null and we’ll render "—°".
+const getTempF = (live: any): number | null => {
+  const c =
+    live?.tempC ?? live?.temperatureC ?? live?.temp_c ?? live?.temperature_c ??
+    null;
+  const f =
+    live?.tempF ?? live?.temperatureF ?? live?.temp_f ?? live?.temperature_f ??
+    null;
+
+  if (typeof f === "number" && isFinite(f)) return Math.round(f);
+  if (typeof c === "number" && isFinite(c)) return Math.round((c * 9) / 5 + 32);
+  return null;
+};
+
 const BottomBar: React.FC = () => {
-  // Live weather if auto, otherwise use manual condition
   const live = useWeather(WEATHER.enable && WEATHER.mode === "auto" ? WEATHER.zip : null);
+
   const condition: WxCond = useMemo(() => {
     if (!WEATHER.enable) return "clear";
     return (WEATHER.mode === "auto" ? (live?.condition ?? "clear") : WEATHER.condition) as WxCond;
   }, [live, WEATHER.enable, WEATHER.mode]);
 
+  const tempF = useMemo(() => (WEATHER.mode === "auto" ? getTempF(live) : null), [live]);
   const { date, time } = formatDateTime();
 
-  // Trigger the scenic flash + any app refresh listeners
   const fireRefresh = () => {
     window.dispatchEvent(new Event("innovue:refresh"));
   };
 
-  // Simple, restrained “system signals” row (visual only)
+  // restrained status strip (visual only; no actual wiring needed)
   const signals = [
-    { label: "API",    state: "OK",    dot: "#22c55e" },
-    { label: "Weather",state: WEATHER.mode === "auto" ? "Live" : "Manual", dot: WEATHER.mode === "auto" ? "#22c55e" : "#94a3b8" },
-    { label: "Sheets", state: "Cached", dot: "#f59e0b" },
-    { label: "Cache",  state: "Warm",  dot: "#60a5fa" },
+    { label: "API",   state: "OK",   dot: "#22c55e" },
+    { label: "Cache", state: "Warm", dot: "#60a5fa" },
   ];
 
+  // ===== Styles (scoped) =====
   const styles = {
-    wrap: {
+    // fixed container (anchored)
+    fixedWrap: {
+      position: "fixed" as const,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: "12px 12px calc(12px + env(safe-area-inset-bottom))",
+      background: "transparent",
+      zIndex: 50,
+    },
+    // inner card
+    card: {
       border: "1px solid #E1E2E6",
       borderRadius: 12,
       background: "#FFFFFF",
       boxShadow: "0 10px 22px rgba(0,0,0,0.08)",
       padding: 12,
-      // two-column grid: left content + right refresh
       display: "grid",
       gridTemplateColumns: "1fr auto",
       gridTemplateRows: "auto auto",
       gap: 8,
       alignItems: "center" as const,
+      maxWidth: 560,
+      margin: "0 auto",
     },
     row1: {
       gridColumn: "1 / 2",
@@ -69,6 +94,7 @@ const BottomBar: React.FC = () => {
       gap: 12,
       color: "#0f172a",
       fontWeight: 600,
+      flexWrap: "wrap" as const,
     },
     row2: {
       gridColumn: "1 / 2",
@@ -76,11 +102,12 @@ const BottomBar: React.FC = () => {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 12,
+      gap: 10,
+      flexWrap: "wrap" as const,
     },
     refreshCol: {
       gridColumn: "2 / 3",
-      gridRow: "1 / span 2", // spans both rows
+      gridRow: "1 / span 2",
       display: "flex",
       alignItems: "center",
       justifyContent: "flex-end",
@@ -126,15 +153,6 @@ const BottomBar: React.FC = () => {
       gap: 8,
       flexWrap: "wrap" as const,
     },
-    lastSync: {
-      color: "#64748b",
-      fontSize: 12,
-      fontWeight: 600,
-      border: "1px solid #E1E2E6",
-      borderRadius: 999,
-      padding: "6px 10px",
-      background: "#FFFFFF",
-    },
     refreshBtn: {
       display: "inline-flex",
       alignItems: "center",
@@ -153,41 +171,50 @@ const BottomBar: React.FC = () => {
   };
 
   return (
-    <div style={styles.wrap}>
-      {/* Row 1: Date · Weather (left) */}
-      <div style={styles.row1}>
-        <span style={styles.chip as React.CSSProperties}>{date}</span>
-        <span style={styles.chip as React.CSSProperties}>{time}</span>
-        <span style={styles.weather as React.CSSProperties}>
-          <span aria-hidden>{weatherIcon(condition)}</span>
-          <span style={{ fontWeight: 700, letterSpacing: 0.2 }}>
-            {condition.charAt(0).toUpperCase() + condition.slice(1)}
-          </span>
-        </span>
-      </div>
+    <div style={styles.fixedWrap}>
+      <div style={styles.card}>
+        {/* Row 1: Date · Time · Weather (left) */}
+        <div style={styles.row1}>
+          <span style={styles.chip as React.CSSProperties}>{date}</span>
+          <span style={styles.chip as React.CSSProperties}>{time}</span>
 
-      {/* Row 2: Status signals + Last Sync (left) */}
-      <div style={styles.row2}>
-        <div style={styles.signalRow as React.CSSProperties}>
-          {signals.map((s, i) => (
-            <span key={i} style={styles.signalPill as React.CSSProperties}>
-              <span style={styles.dot(s.dot)} />
-              {s.label}
-              <span style={{ opacity: 0.8, marginLeft: 6 }}>{s.state}</span>
+          <span style={styles.weather as React.CSSProperties}>
+            <span aria-hidden>{weatherIcon(condition)}</span>
+            <span style={{ fontWeight: 700, letterSpacing: 0.2 }}>
+              {condition.charAt(0).toUpperCase() + condition.slice(1)}
+              {WEATHER.mode === "auto" ? (
+                <> · {tempF != null ? `${tempF}°F` : "—°"}</>
+              ) : null}
             </span>
-          ))}
+          </span>
         </div>
-        <div style={styles.lastSync as React.CSSProperties}>
-          Last Sync: {time}
-        </div>
-      </div>
 
-      {/* Refresh button (right column, spans both rows) */}
-      <div style={styles.refreshCol}>
-        <button style={styles.refreshBtn as React.CSSProperties} onClick={fireRefresh}>
-          <span className="refresh-label">Refresh</span>
-          <span style={styles.refreshIcon} aria-hidden>⟳</span>
-        </button>
+        {/* Row 2: signals (left) */}
+        <div style={styles.row2}>
+          <div style={styles.signalRow as React.CSSProperties}>
+            {signals.map((s, i) => (
+              <span key={i} style={styles.signalPill as React.CSSProperties}>
+                <span style={styles.dot(s.dot)} />
+                {s.label}
+                <span style={{ opacity: 0.8, marginLeft: 6 }}>{s.state}</span>
+              </span>
+            ))}
+            {/* Last Sync as a compact pill */}
+            <span style={styles.signalPill as React.CSSProperties}>
+              <span style={styles.dot("#94a3b8")} />
+              Last&nbsp;Sync
+              <span style={{ opacity: 0.8, marginLeft: 6 }}>{time}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Right column: Refresh (spans both rows) */}
+        <div style={styles.refreshCol}>
+          <button style={styles.refreshBtn as React.CSSProperties} onClick={fireRefresh}>
+            <span className="refresh-label">Refresh</span>
+            <span style={styles.refreshIcon} aria-hidden>⟳</span>
+          </button>
+        </div>
       </div>
     </div>
   );
