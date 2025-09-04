@@ -7,9 +7,7 @@ type Props = {
   reducedMotion?: boolean;
 };
 
-function clamp(v: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, v));
-}
+const BAND_H = 64; // fixed band height
 
 function buildWavePath(totalWidth: number, bandHeight: number, amplitude: number, baseline: number) {
   const seg = totalWidth / 4;
@@ -24,22 +22,22 @@ function buildWavePath(totalWidth: number, bandHeight: number, amplitude: number
 }
 
 export function WavesBack({ sceneWidth, salesRatio, reducedMotion }: Props) {
-  const bandH = 80; // fixed band
   const scrollW = sceneWidth * 2;
 
-  const baseline = 10 + salesRatio * 30; // waterline climb
-  const amplitude = reducedMotion ? 4 : 6 + salesRatio * 12; // taller peaks at higher sales
+  // Calm baseline and amplitude — stable visuals for demo
+  const baseline = 14; // px from band bottom
+  const amplitude = (reducedMotion ? 3 : 4) + salesRatio * 2;
 
   const path = useMemo(
-    () => buildWavePath(scrollW, bandH, amplitude, baseline),
-    [scrollW, bandH, amplitude, baseline]
+    () => buildWavePath(scrollW, BAND_H, amplitude, baseline),
+    [scrollW, amplitude]
   );
 
   return (
-    <div className="tb-waves" aria-hidden>
-      <div className="tb-wave-strip" style={{ animationDuration: reducedMotion ? "20s" : "16s" }}>
-        <svg viewBox={`0 0 ${scrollW} ${bandH}`} width={scrollW} height={bandH} preserveAspectRatio="none">
-          <path d={path} fill="rgba(120, 180, 255, 0.35)" />
+    <div className="tb-waves" aria-hidden style={{ height: BAND_H }}>
+      <div className="tb-wave-strip" style={{ animationDuration: reducedMotion ? "20s" : "16s", height: BAND_H }}>
+        <svg viewBox={`0 0 ${scrollW} ${BAND_H}`} width={scrollW} height={BAND_H} preserveAspectRatio="none">
+          <path d={path} fill="rgba(180, 220, 255, 0.35)" />
         </svg>
       </div>
     </div>
@@ -47,25 +45,24 @@ export function WavesBack({ sceneWidth, salesRatio, reducedMotion }: Props) {
 }
 
 export function WavesFront({ sceneWidth, salesRatio, reducedMotion }: Props) {
-  const bandH = 80;
   const scrollW = sceneWidth * 2;
 
-  const baseline = 5 + salesRatio * 30;
-  const amplitude = reducedMotion ? 6 : 8 + salesRatio * 14;
+  const baseline = 10; // a touch higher than back
+  const amplitude = (reducedMotion ? 4 : 6) + salesRatio * 3;
 
   const path = useMemo(
-    () => buildWavePath(scrollW, bandH, amplitude, baseline),
-    [scrollW, bandH, amplitude, baseline]
+    () => buildWavePath(scrollW, BAND_H, amplitude, baseline),
+    [scrollW, amplitude]
   );
 
   return (
-    <div className="tb-waves" aria-hidden>
+    <div className="tb-waves" aria-hidden style={{ height: BAND_H }}>
       <div
         className="tb-wave-strip tb-wave-front"
-        style={{ animationDuration: reducedMotion ? "14s" : "12s" }}
+        style={{ animationDuration: reducedMotion ? "14s" : "12s", height: BAND_H }}
       >
-        <svg viewBox={`0 0 ${scrollW} ${bandH}`} width={scrollW} height={bandH} preserveAspectRatio="none">
-          <path d={path} fill="rgba(100, 160, 240, 0.55)" />
+        <svg viewBox={`0 0 ${scrollW} ${BAND_H}`} width={scrollW} height={BAND_H} preserveAspectRatio="none">
+          <path d={path} fill="rgba(120, 200, 255, 0.55)" />
         </svg>
       </div>
     </div>

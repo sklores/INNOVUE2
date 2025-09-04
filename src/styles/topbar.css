@@ -1,32 +1,175 @@
-.tb-waves {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 80px; /* fixed band height */
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.tb-wave-strip {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 80px;
-  animation-name: tb-wave-scroll;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-.tb-wave-front {
-  animation-direction: reverse;
-}
-
-@keyframes tb-wave-scroll {
-  0% {
-    transform: translateX(0);
+/* =========================
+   Scenic Top Bar — Unified Frame (match KPI tiles)
+   ========================= */
+   .topbar-frame-outer {
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+  
+    /* Single border to match KPI tiles */
+    border: 1px solid #E1E2E6;
+    border-radius: 16px;
+  
+    /* Tiny internal padding for a premium edge */
+    padding: 8px;
+  
+    background: #FFFFFF; /* same as tiles */
+    box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+    position: relative;
   }
-  100% {
-    transform: translateX(-50%);
+  
+  .topbar-frame-mat2 {
+    border-radius: 14px;  /* slightly less than outer */
+    background: #FFFFFF;
+    overflow: hidden;
+    padding: 6px;         /* crisp inner edge */
+    position: relative;
   }
-}
+  
+  /* =========================
+     Scene core
+     ========================= */
+  .topbar-scene {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(#cfe9ff, #eaf6ff);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+  }
+  
+  .topbar-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* visual-only layers */
+  }
+  
+  .topbar-scene::-webkit-scrollbar { display: none; }
+  
+  /* =========================
+     Waves — fixed band at the bottom (stable)
+     ========================= */
+  .tb-waves {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 64px; /* must match band height in Waves.tsx */
+    overflow: hidden;
+    pointer-events: none;
+  }
+  
+  .tb-wave-strip {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 64px;
+    animation-name: tb-wave-scroll;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+  }
+  
+  .tb-wave-front { animation-direction: reverse; }
+  
+  @keyframes tb-wave-scroll {
+    0%   { transform: translateX(0) }
+    100% { transform: translateX(-50%) }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .tb-wave-strip { animation-duration: 20s !important; }
+  }
+  
+  /* =========================
+     Overlapping Selectors Bar
+     ========================= */
+  .selectors-wrap {
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 12px;
+    margin-top: -16px;  /* pulled up, clear of the waves */
+    position: relative;
+    z-index: 20;
+  }
+  
+  .selectors-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 12px;
+  
+    /* subtle outline to match the card system */
+    border: 1px solid #E1E2E6;
+  
+    box-shadow:
+      0 6px 14px rgba(0,0,0,0.10),
+      0 1px 0 rgba(0,0,0,0.06);
+  }
+  
+  .selectors-bar--centered {
+    justify-content: center;
+    padding: 0 12px;
+  }
+  
+  .sel-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .sel-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 72px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: #f7f9fc;
+    color: #334155;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .sel-tab--active {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  }
+  
+  .sel-tab--disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+  
+  .sel-divider {
+    display: inline-block;
+    width: 10px;
+    text-align: center;
+    color: #c6d0e1;
+    user-select: none;
+  }
+  
+  .sel-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: #eef4ff;
+    color: #17325d;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .sel-refresh:hover { background: #e3ecff; }
+  .sel-refresh:active { transform: translateY(1px); }
+  .sel-refresh-icon { font-size: 16px; line-height: 1; }
+  
+  @media (max-width: 380px) {
+    .sel-tab { min-width: 64px; padding: 0 10px; }
+    .sel-refresh { padding: 0 10px; }
+    .selectors-bar--centered { padding: 0 8px; }
+  }

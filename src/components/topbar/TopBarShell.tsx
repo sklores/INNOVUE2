@@ -26,7 +26,7 @@ const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Scene size
+  // Scene size (for waves/birds width)
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -43,23 +43,28 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Sales ratio (0..1) – you’d wire this to real KPI
-  const [salesRatio] = useState(0.5);
-
-  // One-shot flash beam
+  // One-shot beam flash on mount
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
     const t1 = setTimeout(() => setFlash(true), BEAM_FLASH.delayMs);
-    const t2 = setTimeout(
-      () => setFlash(false),
-      BEAM_FLASH.delayMs + BEAM_FLASH.durationMs
-    );
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const t2 = setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  // Listen for global "refresh" to retrigger beam flash
+  useEffect(() => {
+    const onRefresh = () => {
+      setFlash(false);
+      setTimeout(() => setFlash(true), 20);
+      setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs + 30);
+    };
+    window.addEventListener("innovue:refresh", onRefresh);
+    return () => window.removeEventListener("innovue:refresh", onRefresh);
+  }, []);
+
+  // Placeholder salesRatio (waves use it only for small amplitude touch)
+  const salesRatio = 0.3;
 
   return (
     <div
@@ -94,11 +99,12 @@ const TopBarShell: React.FC = () => {
               overflow: "hidden",
             }}
           >
-            {/* back → front */}
+            {/* back -> front */}
             <div className="topbar-layer" style={{ zIndex: 1 }}>
               <SkyLayer />
             </div>
 
+            {/* Weather */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
@@ -109,6 +115,7 @@ const TopBarShell: React.FC = () => {
               )}
             </div>
 
+            {/* Waves back (behind rock & lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
                 sceneWidth={sceneW}
@@ -117,6 +124,7 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
+            {/* Rock base */}
             <div className="topbar-layer" style={{ zIndex: 4 }}>
               <div
                 style={{
@@ -132,7 +140,8 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            <div className="topbar-layer" style={{ zIndex: 5 }}>
+            {/* Waves front (in front of lighthouse) */}
+            <div className="topbar-layer" style={{ zIndex: 9 }}>
               <WavesFront
                 sceneWidth={sceneW}
                 salesRatio={salesRatio}
@@ -140,6 +149,7 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
+            {/* Birds (behind lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
@@ -148,12 +158,14 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
+            {/* Lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 7 }}>
-              <Lighthouse beamActive={LIGHTHOUSE.beamOn} />
+              <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
+            {/* Sun/Moon */}
             <div className="topbar-layer" style={{ zIndex: 8 }}>
-              <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
+              <div style={{ position: "absolute", right: 10 - (SUN.offsetX ?? 0), top: 8 + (SUN.offsetY ?? 0) }}>
                 <SunMoon
                   size={SUN.size}
                   raysCount={SUN.raysCount}
@@ -163,6 +175,20 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
+            {/* Beam flash */}
+            {flash && (
+              <LightBeam
+                originX={LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28)}
+                originY={TOPBAR.height - (LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22)}
+                startDeg={0}
+                sweepDeg={44}
+                durationMs={BEAM_FLASH.durationMs}
+                beamColor={BEAM_FLASH.beamColor}
+                beamWidthDeg={BEAM_FLASH.beamWidthDeg}
+              />
+            )}
+
+            {/* Centered logo */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
               <ClientLogo />
             </div>
