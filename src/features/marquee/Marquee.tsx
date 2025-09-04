@@ -36,7 +36,6 @@ const MOCK_FEED: Record<SourceKey, string[]> = {
   ],
 };
 
-// Small metrics row (optional)
 const METRICS = [
   { label: "Mentions",      val: 27, dot: "#60a5fa" },
   { label: "New Reviews",   val: 5,  dot: "#60a5fa" },
@@ -48,40 +47,37 @@ const Marquee: React.FC = () => {
   const feed = MOCK_FEED[active] ?? [];
   const ticker = useMemo(() => (feed.length ? feed.join("  •  ") : ""), [feed]);
 
-  // --- Styles (match KPI tiles; add consistent side padding) ---
+  const [paused, setPaused] = useState(false);
+  const onEnter = () => setPaused(true);
+  const onLeave = () => setPaused(false);
+
+  // === Styles (match KPI tiles; correct gutters/padding) ===
   const styles = {
     card: {
       border: "1px solid #E1E2E6",
       borderRadius: 16,
       background: "#FFFFFF",
       boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
-      padding: 14,            // same as KPI tiles
+      padding: 14,    // same padding feel as KPI tiles
       marginTop: 12,
       position: "relative" as const,
       pointerEvents: "auto" as const,
     },
 
-    // Top row: tabs + GCDC logo, all centered with breathing room
-    centerRow: {
+    // One single row: tabs + logo — centered, no wrap (scrolls if needed)
+    topRow: {
       display: "flex",
       alignItems: "center",
-      justifyContent: "center", // centered group
+      justifyContent: "center",
       gap: 10,
-      flexWrap: "wrap" as const,
-      paddingInline: 12,        // same side padding feel as KPI tiles
       marginBottom: 10,
-    },
-
-    // Tabs in one line; if too small, they can scroll horizontally
-    tabs: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
+      paddingInline: 12,     // gutters
       whiteSpace: "nowrap" as const,
-      overflowX: "auto" as const,
+      overflowX: "auto" as const, // if too narrow, let the row scroll
       scrollbarWidth: "none" as const,
       msOverflowStyle: "none" as const,
     },
+
     tab: (activeTab: boolean) => ({
       height: 30,
       display: "inline-flex",
@@ -95,7 +91,6 @@ const Marquee: React.FC = () => {
       cursor: "pointer",
     }),
 
-    // GCDC logo at top-right of the centered row (bigger chip), no animation
     brandChip: {
       width: 44,
       height: 44,
@@ -108,7 +103,7 @@ const Marquee: React.FC = () => {
     },
     brandImg: { width: 40, height: 40, objectFit: "contain" as const, borderRadius: "50%" },
 
-    // Ticker (static; manual scroll if long)
+    // Ticker (auto-scroll + pause on hover/touch)
     tickerWrap: {
       border: "1px solid #E1E2E6",
       borderRadius: 12,
@@ -127,6 +122,8 @@ const Marquee: React.FC = () => {
       fontWeight: 700,
       letterSpacing: 0.2,
       padding: "8px 12px",
+      animation: `marquee 22s linear infinite`,
+      animationPlayState: paused ? "paused" : ("running" as const),
     },
 
     // Metrics row (centered)
@@ -160,28 +157,33 @@ const Marquee: React.FC = () => {
 
   return (
     <section style={styles.card}>
-      {/* Centered top row: tabs + GCDC logo */}
-      <div style={styles.centerRow as React.CSSProperties}>
-        <div style={styles.tabs as React.CSSProperties}>
-          {SOURCES.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setActive(s.key)}
-              style={styles.tab(active === s.key) as React.CSSProperties}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
+      {/* One single row: tabs + logo; centered; no wrap */}
+      <div style={styles.topRow as React.CSSProperties}>
+        {SOURCES.map(s => (
+          <button
+            key={s.key}
+            onClick={() => setActive(s.key)}
+            style={styles.tab(active === s.key) as React.CSSProperties}
+          >
+            {s.label}
+          </button>
+        ))}
         <div style={styles.brandChip as React.CSSProperties}>
           <img src="/logos/gcdclogo.png" alt="GCDC" style={styles.brandImg as React.CSSProperties} />
         </div>
       </div>
 
-      {/* Ticker (static text; horizontally scrollable if long) */}
-      <div style={styles.tickerWrap as React.CSSProperties}>
-        <div style={styles.tickerPill as React.CSSProperties}>{ticker}</div>
+      {/* Ticker (auto-scroll; pause on hover/touch) */}
+      <div
+        style={styles.tickerWrap as React.CSSProperties}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        onTouchStart={onEnter}
+        onTouchEnd={onLeave}
+      >
+        <div style={styles.tickerPill as React.CSSProperties}>
+          {ticker} &nbsp;&nbsp; {ticker}
+        </div>
       </div>
 
       {/* Metrics */}
@@ -193,6 +195,16 @@ const Marquee: React.FC = () => {
           </span>
         ))}
       </div>
+
+      {/* keyframes for the marquee */}
+      <style>{`
+        @keyframes marquee {
+          0%   { transform: translateX(0) }
+          100% { transform: translateX(-50%) }
+        }
+        /* hide webkit scrollbars in the topRow when it overflows */
+        section::-webkit-scrollbar { display: none; }
+      `}</style>
     </section>
   );
 };
