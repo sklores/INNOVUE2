@@ -124,7 +124,7 @@ const Flock: React.FC<{
       y += (Math.random() * 4 - 2);           // -2..+2 px
 
       // timing/tilt
-      const bob = reducedMotion ? 1.2 : 0.9 + (r + c) * 0.02 + Math.random() * 0.04;
+      const bob = reducedMotion ? 1.6 : 1.2 + (r + c) * 0.02 + Math.random() * 0.04; // slower bob
       const phase = (r * 0.08) + (c * 0.05) + Math.random() * 0.06;
       const tilt = (direction === 1 ? -8 : 8) + (r - rows / 2) * 2 + (Math.random() * 4 - 2);
 
@@ -141,14 +141,14 @@ const Flock: React.FC<{
 
   const containerStyle: React.CSSProperties = {
     position: "absolute",
-    left: -200,                            // generous runway
+    left: -220,                            // generous runway
     top: `${topPct}%`,
-    width: hSpread + 420,
+    width: hSpread + 460,
     height: vSpread + size * 3,
     pointerEvents: "none",
     animation: `${anim} ${duration}s linear ${delay}s infinite`,
     willChange: "transform",
-    opacity: 0.95,
+    opacity: 0.9,
   };
 
   return (
@@ -170,45 +170,53 @@ const Flock: React.FC<{
                100% { transform: translateX(110%) }`
             : `0%   { transform: translateX(110%) }
                100% { transform: translateX(-10%) }`}
+        }
       `}</style>
     </div>
   );
 };
 
-const Birds: React.FC<Props> = ({ sceneWidth, activity = 0.4, reducedMotion }) => {
-  // Higher labor => more activity
+const Birds: React.FC<Props> = ({ sceneWidth, activity = 0, reducedMotion }) => {
+  // Higher labor => more activity (0..1)
   const t = clamp01(activity);
 
-  // 1..4 flocks (more with higher labor)
-  const flocks = 1 + Math.round(t * 3);
+  // Strictly zero birds at zero labor
+  if (t <= 0.001) {
+    return <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />;
+  }
 
-  // base sizes & spreads
-  const sizeBase = 7 + Math.round(t * 5);                 // 7..12 px
-  const hSpreadBase = Math.min(300, sceneWidth * 0.7);
-  const vSpreadBase = 16;                                  // base vertical band
-  const durBase = reducedMotion ? 15 : 11;
+  // Slower flight overall; long traverse times
+  const baseDur = reducedMotion ? 22 : 18;          // seconds for the first flock
+  const durPerFlock = 2.0;                          // add a bit per flock to vary
+
+  // Fewer birds overall:
+  // - flocks ramp from 1 up to 3 max
+  // - rows 1..2; cols 2..4
+  const flocks = Math.max(1, Math.min(3, Math.floor(Math.pow(t, 1.1) * 3)));
+  const sizeBase = 6 + Math.round(t * 4);           // 6..10 px
+  const hSpreadBase = Math.min(280, sceneWidth * 0.65);
+  const vSpreadBase = 14;                            // slightly tighter vertical band
 
   const groups = useMemo(() => {
     return Array.from({ length: flocks }).map((_, i) => {
-      const topPct = 20 + i * (22 / Math.max(1, flocks - 1)) + Math.random() * 8;  // more jitter
+      const topPct = 20 + i * (20 / Math.max(1, flocks - 1)) + Math.random() * 8;
       const size = sizeBase + (i % 2);
-      const duration = Math.max(7, (durBase + i * 1.4 - t * 3) + (Math.random() * 1.5 - 0.75));
+      const duration = baseDur + i * durPerFlock + (Math.random() * 2 - 1); // slower traverse
       const delay = -Math.random() * duration;
 
-      // rows/cols with randomness
-      const rows = Math.max(1, 1 + Math.round(Math.random() + t));         // often 1–2
-      const cols = 3 + Math.round(t * 2) + (Math.random() < 0.3 ? 1 : 0);  // 3..6
+      // rows/cols with conservative counts
+      const rows = Math.max(1, Math.round(Math.random() < (t > 0.55 ? 0.6 : 0.3))); // mostly 1 row; 2 when busy
+      const cols = 2 + Math.round(t * 2);  // 2..4 per row
 
-      // per-flock spread variance
-      const hSpread = hSpreadBase * (0.9 + Math.random() * 0.25);
-      const vSpread = vSpreadBase + (i * 2) + Math.random() * 6;
+      const hSpread = hSpreadBase * (0.9 + Math.random() * 0.2);
+      const vSpread = vSpreadBase + (rows > 1 ? 6 : 0) + Math.random() * 4;
 
-      // random direction (≈40% right→left)
+      // Random direction, 40% right->left
       const dir = Math.random() < 0.4 ? -1 : 1;
 
       return { topPct, size, cols, rows, duration, delay, hSpread, vSpread, dir };
     });
-  }, [flocks, sizeBase, hSpreadBase, vSpreadBase, durBase, t]);
+  }, [flocks, sizeBase, hSpreadBase, vSpreadBase, baseDur, durPerFlock, t]);
 
   const strokeColor = "rgba(40, 60, 80, 0.9)";
 
