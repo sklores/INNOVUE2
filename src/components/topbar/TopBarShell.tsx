@@ -1,4 +1,3 @@
-// src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TOPBAR,
@@ -27,7 +26,6 @@ const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Scene size (for waves/birds width)
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -44,7 +42,6 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -59,21 +56,17 @@ const TopBarShell: React.FC = () => {
     };
   }, []);
 
-  // Listen for global "refresh" to retrigger beam flash
-  useEffect(() => {
-    const onRefresh = () => {
-      setFlash(false);
-      setTimeout(() => setFlash(true), 20);
-      setTimeout(
-        () => setFlash(false),
-        BEAM_FLASH.delayMs + BEAM_FLASH.durationMs + 30
-      );
-    };
-    window.addEventListener("innovue:refresh", onRefresh);
-    return () => window.removeEventListener("innovue:refresh", onRefresh);
-  }, []);
+  const [salesRatio, setSalesRatio] = useState(0.25); // placeholder for real KPI binding
 
-  // Lighthouse lantern → INNOVUE target
+  // 🎯 Map sales ratio to waterline + wave amplitude
+  const minBaseline = 0;
+  const maxBaseline = 45; // just below lighthouse window
+  const minAmplitude = 3;
+  const maxAmplitude = 15;
+
+  const baseline = minBaseline + (maxBaseline - minBaseline) * salesRatio;
+  const amplitude = minAmplitude + (maxAmplitude - minAmplitude) * salesRatio;
+
   const lanternX =
     LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
   const lanternY_fromBottom =
@@ -90,9 +83,6 @@ const TopBarShell: React.FC = () => {
   const span = BEAM_FLASH.sweepSpanDeg ?? 44;
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
-
-  // Placeholder until wired to KPI
-  const salesRatio = 0.62;
 
   const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
 
@@ -140,7 +130,6 @@ const TopBarShell: React.FC = () => {
               <SkyLayer />
             </div>
 
-            {/* Weather (clouds/rain/fog) */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
@@ -151,16 +140,16 @@ const TopBarShell: React.FC = () => {
               )}
             </div>
 
-            {/* Waves behind rock (behind lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
                 salesRatio={salesRatio}
+                baseline={baseline}
+                amplitude={amplitude}
                 reducedMotion={reducedMotion}
               />
             </div>
 
-            {/* Rock base */}
             <div className="topbar-layer" style={{ zIndex: 4 }}>
               <div
                 style={{
@@ -176,16 +165,16 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Front waves in front of lighthouse */}
-            <div className="topbar-layer" style={{ zIndex: 9 }}>
+            <div className="topbar-layer" style={{ zIndex: 5 }}>
               <WavesFront
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
                 salesRatio={salesRatio}
+                baseline={baseline}
+                amplitude={amplitude}
                 reducedMotion={reducedMotion}
               />
             </div>
 
-            {/* Birds behind lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
@@ -194,12 +183,10 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 7 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
-            {/* Sun/Moon */}
             <div className="topbar-layer" style={{ zIndex: 8 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
@@ -211,7 +198,6 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Flash beam */}
             {flash && (
               <LightBeam
                 originX={lanternX}
@@ -224,24 +210,7 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* GCDC logo */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              {flash && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: BADGE.width,
-                    height: BADGE.height,
-                    borderRadius: 8,
-                    boxShadow: `0 0 ${BEAM_FLASH.glowSpreadPx}px ${BEAM_FLASH.glowColor}`,
-                    filter: "blur(0.2px)",
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
               <ClientLogo />
             </div>
           </div>
