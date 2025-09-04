@@ -9,153 +9,100 @@ type Props = {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-/** One bird composed of 3 strokes: LEFT wing, BODY, RIGHT wing.
- *  Wings flap around the BODY as the pivot (no visible gap).
- */
-const BirdMark: React.FC<{
-  size: number;           // base size in px
+/** Minimal single-path bird (no wing gaps), with soft bob/tilt */
+const BirdGlyph: React.FC<{
+  size: number;
   color: string;
-  flapSeconds: number;    // flap period
-  flapDelay: number;      // phase offset
-  tiltDeg: number;        // base tilt of the whole bird
-}> = ({ size, color, flapSeconds, flapDelay, tiltDeg }) => {
-  const bodyLen = Math.max(6, Math.round(size * 0.9));   // body stroke length
-  const wingLen = Math.max(8, Math.round(size * 1.2));   // each wing stroke
-  const stroke = 2;
+  bobSec: number;
+  bobDelay: number;
+  tiltDeg: number;
+}> = ({ size, color, bobSec, bobDelay, tiltDeg }) => {
+  const w = size * 2.2;
+  const h = size * 1.2;
 
-  // Keyframe name unique per instance to avoid collisions
-  const anim = useMemo(() => `wingflap_${Math.random().toString(36).slice(2)}`, []);
+  // a simple chevron curve path
+  const path = `M 0 ${h*0.6} Q ${w*0.35} ${h*0.2}, ${w*0.55} ${h*0.6} Q ${w*0.8} ${h*0.95}, ${w} ${h*0.6}`;
 
-  const commonWing: React.CSSProperties = {
-    position: "absolute",
-    top: 0,
-    height: 0,
-    borderTop: `${stroke}px solid ${color}`,
-    transformOrigin: "left center",
-    willChange: "transform",
-  };
+  const anim = useMemo(() => `birdbob_${Math.random().toString(36).slice(2)}`, []);
 
   return (
-    <div
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
       style={{
-        position: "relative",
-        width: wingLen * 2,
-        height: size,
+        display: "block",
         transform: `rotate(${tiltDeg}deg)`,
+        animation: `${anim} ${bobSec}s ease-in-out ${bobDelay}s infinite`,
       }}
     >
-      {/* BODY (center short stroke) */}
-      <span
-        style={{
-          position: "absolute",
-          top: size * 0.4,
-          left: wingLen - bodyLen / 2,
-          width: bodyLen,
-          height: 0,
-          borderTop: `${stroke}px solid ${color}`,
-          opacity: 0.95,
-        }}
-      />
-
-      {/* LEFT WING (flaps up/down around body's left end) */}
-      <span
-        style={{
-          ...commonWing,
-          left: wingLen - bodyLen / 2,
-          top: size * 0.4,
-          width: wingLen,
-          animation: `${anim}_L ${flapSeconds}s ease-in-out ${flapDelay}s infinite`,
-        }}
-      />
-
-      {/* RIGHT WING (mirrored, pivots around body's right end) */}
-      <span
-        style={{
-          ...commonWing,
-          left: wingLen + bodyLen / 2,
-          top: size * 0.4,
-          width: wingLen,
-          transformOrigin: "right center",
-          animation: `${anim}_R ${flapSeconds}s ease-in-out ${flapDelay + 0.04}s infinite`,
-        }}
-      />
-
+      <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
       <style>{`
-        @keyframes ${anim}_L {
-          0%   { transform: rotate(18deg) }
-          50%  { transform: rotate(30deg) }  /* gentle amplitude */
-          100% { transform: rotate(18deg) }
-        }
-        @keyframes ${anim}_R {
-          0%   { transform: rotate(-18deg) }
-          50%  { transform: rotate(-30deg) }
-          100% { transform: rotate(-18deg) }
+        @keyframes ${anim} {
+          0%, 100% { transform: translateY(0) }
+          50%      { transform: translateY(-1.5px) }
         }
       `}</style>
-    </div>
+    </svg>
   );
 };
 
-/** A flock flying left->right as a set of small BirdMarks. */
 const Flock: React.FC<{
-  topPct: number;          // vertical placement (0..100%) of the scene
-  size: number;            // base bird size in px
-  count: number;           // number of birds in the flock
-  duration: number;        // seconds to cross the scene
-  delay: number;           // animation delay (s)
-  spread: number;          // horizontal spread of flock in px
-  color: string;           // stroke color
+  topPct: number;
+  size: number;
+  cols: number;            // birds per row
+  rows: number;            // number of staggered rows
+  duration: number;
+  delay: number;
+  hSpread: number;         // horizontal spread
+  vSpread: number;         // vertical spread (stacking)
+  color: string;
   reducedMotion?: boolean;
-}> = ({ topPct, size, count, duration, delay, spread, color, reducedMotion }) => {
-  const birds = Array.from({ length: count }).map((_, i) => {
-    const offset = (i / Math.max(1, count - 1)) * spread;
-    const yJitter = (Math.sin(i) * size) / 3;
-    const tilt = -10 + (i % 3) * 5;                 // subtle variation
-    const flap = reducedMotion ? 1.1 : 0.85 + (i % 4) * 0.06; // compact, natural speed
-    const phase = (i % 5) * 0.08;
-    return { offset, yJitter, tilt, flap, phase };
-  });
+}> = ({ topPct, size, cols, rows, duration, delay, hSpread, vSpread, color, reducedMotion }) => {
+  const birds: { x: number; y: number; bob: number; phase: number; tilt: number }[] = [];
 
-  const animName = useMemo(
-    () => `flockfly_${Math.random().toString(36).slice(2)}`,
-    []
-  );
+  // build a small staggered grid (rows/cols) → better “stacking” than a single line
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = (c / Math.max(1, cols - 1)) * hSpread;
+      const y = (r / Math.max(1, rows - 1)) * vSpread + (r % 2 === 0 ? 0 : 3); // staggered
+      const bob = reducedMotion ? 1.2 : 0.9 + (r + c) * 0.02;
+      const phase = (r * 0.08) + (c * 0.05);
+      const tilt = -8 + (r - rows / 2) * 2;
+      birds.push({ x, y, bob, phase, tilt });
+    }
+  }
+
+  const anim = useMemo(() => `flock_${Math.random().toString(36).slice(2)}`, []);
 
   return (
     <div
       style={{
         position: "absolute",
-        left: -140,
+        left: -160,
         top: `${topPct}%`,
-        height: size * 3,
-        width: spread + 360,
+        width: hSpread + 380,
+        height: vSpread + size * 3,
         pointerEvents: "none",
-        animation: `${animName} ${duration}s linear ${delay}s infinite`,
+        animation: `${anim} ${duration}s linear ${delay}s infinite`,
         willChange: "transform",
         opacity: 0.95,
       }}
     >
-      {birds.map((b, idx) => (
-        <div
-          key={idx}
-          style={{
-            position: "absolute",
-            left: b.offset,
-            top: b.yJitter,
-          }}
-        >
-          <BirdMark
+      {birds.map((b, i) => (
+        <div key={i} style={{ position: "absolute", left: b.x, top: b.y }}>
+          <BirdGlyph
             size={size}
             color={color}
-            flapSeconds={b.flap}
-            flapDelay={b.phase}
+            bobSec={b.bob}
+            bobDelay={b.phase}
             tiltDeg={b.tilt}
           />
         </div>
       ))}
 
       <style>{`
-        @keyframes ${animName} {
+        @keyframes ${anim} {
           0%   { transform: translateX(0) }
           100% { transform: translateX(110%) }
         }
@@ -166,24 +113,29 @@ const Flock: React.FC<{
 
 const Birds: React.FC<Props> = ({ sceneWidth, activity = 0.4, reducedMotion }) => {
   const t = clamp01(activity);
-  const durBase = reducedMotion ? 14 : 10;      // slower if reduced-motion
-  const flocks = 1 + Math.round(t * 2);         // 1..3 flocks
-  const sizeBase = 7 + Math.round(t * 5);       // 7..12 px
-  const spreadBase = Math.min(260, sceneWidth * 0.6);
+  const durBase = reducedMotion ? 14 : 10;
+  const flocks = 1 + Math.round(t * 2);                 // 1..3 flocks
+  const sizeBase = 7 + Math.round(t * 5);               // 7..12 px
+  const hSpread = Math.min(260, sceneWidth * 0.6);
+  const vSpreadBase = 16;                                // vertical stacking band
 
   const groups = useMemo(() => {
     return Array.from({ length: flocks }).map((_, i) => {
-      const topPct = 20 + i * (24 / Math.max(1, flocks - 1)) + Math.random() * 6;
+      const topPct = 22 + i * (22 / Math.max(1, flocks - 1)) + Math.random() * 6;
       const size = sizeBase + (i % 2);
-      const count = 4 + Math.round(1 + t * 2);     // 5..7 birds/flock
-      const duration = durBase + i * 1.6 - t * 2;  // slightly different speeds
+      const duration = durBase + i * 1.6 - t * 2;
       const delay = -Math.random() * duration;
-      const spread = spreadBase - i * 28 + Math.random() * 18;
-      return { topPct, size, count, duration, delay, spread };
-    });
-  }, [flocks, sizeBase, spreadBase, durBase, t]);
 
-  const strokeColor = "rgba(40, 60, 80, 0.95)";
+      // rows/cols scale gently with activity
+      const rows = 2;                     // two stacked rows looks tidy
+      const cols = 3 + Math.round(t * 1); // 3..4 per row
+      const vSpread = vSpreadBase + (i * 2);
+
+      return { topPct, size, cols, rows, duration, delay, vSpread };
+    });
+  }, [flocks, sizeBase, hSpread, vSpreadBase, durBase, t]);
+
+  const strokeColor = "rgba(40, 60, 80, 0.9)";
 
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
@@ -192,10 +144,12 @@ const Birds: React.FC<Props> = ({ sceneWidth, activity = 0.4, reducedMotion }) =
           key={idx}
           topPct={g.topPct}
           size={g.size}
-          count={g.count}
+          cols={g.cols}
+          rows={g.rows}
           duration={g.duration}
           delay={g.delay}
-          spread={g.spread}
+          hSpread={hSpread}
+          vSpread={g.vSpread}
           color={strokeColor}
           reducedMotion={reducedMotion}
         />
