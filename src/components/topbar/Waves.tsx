@@ -12,20 +12,18 @@ type Variant = "back" | "front";
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
  * MAX_WATERLINE_PX:
- *  The highest baseline we allow at salesRatio = 1.0 (px from scene bottom).
- *  Increase to let the water rise higher; decrease to lower the cap.
- *  Tune by eye — ~72..84 usually hits "just under the first window".
+ *  Highest baseline allowed at salesRatio = 1.0 (px from scene bottom).
+ *  Tune by eye — ~68..74 usually lands just under the lighthouse first window.
  */
-const MAX_WATERLINE_PX = 76;
+const MAX_WATERLINE_PX = 70;
 
 /** Back wave sits a bit lower than front to keep depth */
-const PARALLAX_BACK_PX = 4;
+const PARALLAX_BACK_PX = 5;
 
-/** Height of the wave band (must also match CSS .tb-waves height via inline style) */
+/** Height of the wave band (pixels). */
 const BAND_HEIGHT = 64;
 
 /** Build a wave path sized to the *band height* (not the full scene). */
@@ -49,7 +47,6 @@ function buildWavePath(
   return d;
 }
 
-/** Internal layer that renders exactly one wave strip (either "back" or "front"). */
 const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   sceneSize,
   salesRatio,
@@ -57,38 +54,37 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   variant,
 }) => {
   const sceneW = sceneSize.width;
-  const r = clamp01(salesRatio);
+  const rRaw = clamp01(salesRatio);
 
-  // Use a fixed band (stable layout)
-  const bandH = BAND_HEIGHT;
-  const scrollW = sceneW * 2; // 2x width so it can scroll
+  // Slightly non-linear ramp so “bigness” shows more near the top
+  const r = Math.pow(rRaw, 0.85);
 
-  // --- amplitude mapping (same feel; front bigger than back) ---
-  const baseBackLow = 3;   // px at r=0
-  const baseFrontLow = 4;  // px at r=0
-  const targetBack   = 22; // px at r=1
-  const targetFront  = 28; // px at r=1
-  const ampBack  = Math.round(lerp(baseBackLow,  targetBack,  r));
-  const ampFront = Math.round(lerp(baseFrontLow, targetFront, r));
+  const bandH = BAND_HEIGHT;           // fixed band for stability
+  const scrollW = sceneW * 2;          // 2x width so it can scroll
 
-  // --- low-sales baseline (yFromBottom) inside the band ---
+  // --- amplitude mapping (bigger waves at high sales) ---
+  // very low baseline
+  const baseBackLow  = 3;
+  const baseFrontLow = 4;
+  // stronger targets
+  const targetBack   = 26;   // was 22
+  const targetFront  = 32;   // was 28
+
+  const ampBack  = Math.round(baseBackLow  + (targetBack  - baseBackLow)  * r);
+  const ampFront = Math.round(baseFrontLow + (targetFront - baseFrontLow) * r);
+
+  // --- baseline yFromBottom — smooth climb with cap ---
   const baseBackYLow  = 20;
   const baseFrontYLow = 10;
 
-  // Desired waterline at this sales:
-  // raise smoothly from low baseline toward MAX_WATERLINE_PX, but never exceed a safe
-  // value that preserves wave shape (need some headroom above the baseline).
-  const minBaselineBack  = ampBack  + 4; // safety: baseline must be above crest bottom
-  const minBaselineFront = ampFront + 4;
+  // desired waterline for this sales, capped
+  const targetYFront = clamp(MAX_WATERLINE_PX, ampFront + 4, bandH - 2);
+  const targetYBack  = clamp(MAX_WATERLINE_PX - PARALLAX_BACK_PX, ampBack + 4, bandH - 2);
 
-  // Target for this sales, capped so front/back remain visible.
-  const targetYFront = clamp(MAX_WATERLINE_PX, minBaselineFront, bandH - 2);
-  const targetYBack  = clamp(MAX_WATERLINE_PX - PARALLAX_BACK_PX, minBaselineBack, bandH - 2);
+  const yFromBottomBack  = clamp(Math.round(baseBackYLow  + (targetYBack  - baseBackYLow)  * r), ampBack  + 4, bandH - 2);
+  const yFromBottomFront = clamp(Math.round(baseFrontYLow + (targetYFront - baseFrontYLow) * r), ampFront + 4, bandH - 2);
 
-  const yFromBottomBack  = clamp(Math.round(lerp(baseBackYLow,  targetYBack,  r)),  minBaselineBack,  bandH - 2);
-  const yFromBottomFront = clamp(Math.round(lerp(baseFrontYLow, targetYFront, r)), minBaselineFront, bandH - 2);
-
-  // --- speed: a touch faster with high sales (still calm) ---
+  // --- speed: modestly faster with higher sales (still calm) ---
   const durBack  = Math.max(8, (reducedMotion ? 18 : 16) - r * 5);
   const durFront = Math.max(6, (reducedMotion ? 14 : 12) - r * 5);
 
@@ -126,7 +122,6 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   );
 };
 
-// Public exports: two layers so you can sandwich the rock between them.
 export const WavesBack: React.FC<CommonProps> = (p) => (
   <WavesLayer {...p} variant="back" />
 );

@@ -10,6 +10,7 @@ import {
   INNOVUE_FILL,
   ROCK,
   WEATHER,
+  BIRDS,
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -20,18 +21,7 @@ import { WavesBack, WavesFront } from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
 import Birds from "./Birds";
-import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
-
-// Pull data from the same source as KPI tiles
-import { fetchSheetValues } from "../../features/data/sheets/fetch";
-import { sheetMap } from "../../config/sheetMap";
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-const toNum = (v: unknown) => {
-  const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
-  return Number.isFinite(n) ? n : null;
-};
 
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
@@ -54,74 +44,7 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Waves ← Sales (0..1). Birds ← Labor (0..1, higher = more birds)
-  const [salesRatio, setSalesRatio] = useState(0.10);
-  const [laborActivity, setLaborActivity] = useState(0.10);
-
-  // Helpers to compute ratios from sheet rows
-  const computeSalesRatio = (rows: string[][]) => {
-    try {
-      let salesRow: string[] | undefined;
-      for (const idx of sheetMap.kpiRows) {
-        const r = rows[idx] || [];
-        const label = String(r[0] ?? "").trim().toLowerCase();
-        if (label === "sales") { salesRow = r; break; }
-      }
-      if (!salesRow) return 0.1;
-      const val = toNum(salesRow[1]);
-      const greenAt = toNum(salesRow[2]);
-      const redAt = toNum(salesRow[3]);
-      if (val == null) return 0.1;
-      if (greenAt != null && redAt != null && greenAt !== redAt) {
-        return clamp01((val - redAt) / (greenAt - redAt));
-      }
-      const unitToken = String(salesRow[5] ?? "").trim().toLowerCase();
-      if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
-      return clamp01((val as number) > 0 ? 0.6 : 0.1);
-    } catch { return 0.1; }
-  };
-
-  const computeLaborActivity = (rows: string[][]) => {
-    try {
-      let laborRow: string[] | undefined;
-      for (const idx of sheetMap.kpiRows) {
-        const r = rows[idx] || [];
-        const label = String(r[0] ?? "").trim().toLowerCase();
-        if (label === "labor" || label === "labour") { laborRow = r; break; }
-      }
-      if (!laborRow) return 0.1;
-      const val = toNum(laborRow[1]);    // percent expected normally
-      if (val == null) return 0.1;
-      const unitToken = String(laborRow[5] ?? "").trim().toLowerCase();
-      if (unitToken === "%" || unitToken === "percent") {
-        return clamp01((val as number) / 100); // higher labor => more birds
-      }
-      // If not %, fallback to a scaled heuristic
-      return clamp01(((val as number) / 1000));
-    } catch { return 0.1; }
-  };
-
-  const refreshData = async () => {
-    try {
-      const rows = await fetchSheetValues();
-      setSalesRatio(computeSalesRatio(rows));
-      setLaborActivity(computeLaborActivity(rows));
-    } catch {
-      // keep previous
-    }
-  };
-
-  // Fetch on mount
-  useEffect(() => { refreshData(); }, []);
-
-  // Also refresh when the app "Refresh" event fires
-  useEffect(() => {
-    const onRefresh = () => { refreshData(); };
-    window.addEventListener("innovue:refresh", onRefresh);
-    return () => window.removeEventListener("innovue:refresh", onRefresh);
-  }, []);
-
-  // One-shot flash on mount/refresh (for beam + logo glow boost)
+  // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -147,8 +70,7 @@ const TopBarShell: React.FC = () => {
       );
     };
     window.addEventListener("innovue:refresh", onRefresh);
-    return () =>
-      window.removeEventListener("innovue:refresh", onRefresh);
+    return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
   // Lighthouse lantern → INNOVUE target
@@ -168,6 +90,9 @@ const TopBarShell: React.FC = () => {
   const span = BEAM_FLASH.sweepSpanDeg ?? 44;
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
+
+  // Placeholder until wired to KPI
+  const salesRatio = 0.62;
 
   const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
 
@@ -226,7 +151,7 @@ const TopBarShell: React.FC = () => {
               )}
             </div>
 
-            {/* Waves behind the rock */}
+            {/* Waves behind rock (behind lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -240,9 +165,9 @@ const TopBarShell: React.FC = () => {
               <div
                 style={{
                   position: "absolute",
-                  left:  ROCK.offsetLeft,
+                  left: ROCK.offsetLeft,
                   bottom: ROCK.offsetBottom,
-                  width:  ROCK.width,
+                  width: ROCK.width,
                   height: ROCK.height,
                   pointerEvents: "none",
                 }}
@@ -251,8 +176,8 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Waves in front of the rock */}
-            <div className="topbar-layer" style={{ zIndex: 5 }}>
+            {/* Front waves in front of lighthouse */}
+            <div className="topbar-layer" style={{ zIndex: 9 }}>
               <WavesFront
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
                 salesRatio={salesRatio}
@@ -260,21 +185,21 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Birds — now tied to Labor activity */}
+            {/* Birds behind lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
-                activity={laborActivity}
+                activity={BIRDS.activity}
                 reducedMotion={reducedMotion}
               />
             </div>
 
-            {/* Lighthouse (rotating beam pauses during flash) */}
+            {/* Lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 7 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
-            {/* Sun/Moon (top-right) */}
+            {/* Sun/Moon */}
             <div className="topbar-layer" style={{ zIndex: 8 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
@@ -286,7 +211,7 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Flash beam aimed at INNOVUE text */}
+            {/* Flash beam */}
             {flash && (
               <LightBeam
                 originX={lanternX}
@@ -299,31 +224,26 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* Centered client logo with warm glow (boosts on flash) */}
+            {/* GCDC logo */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              <GlowLogo boost={flash} />
+              {flash && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: BADGE.width,
+                    height: BADGE.height,
+                    borderRadius: 8,
+                    boxShadow: `0 0 ${BEAM_FLASH.glowSpreadPx}px ${BEAM_FLASH.glowColor}`,
+                    filter: "blur(0.2px)",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
               <ClientLogo />
             </div>
-
-            {/* (Optional) INNOVUE fill effect – enable if desired) */}
-            {false && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: INNOVUE_FILL.left,
-                  top: INNOVUE_FILL.top,
-                  width: INNOVUE_FILL.width,
-                  height: INNOVUE_FILL.height,
-                  borderRadius: INNOVUE_FILL.radius,
-                  background: INNOVUE_FILL.color,
-                  filter: `blur(${INNOVUE_FILL.blurPx})`,
-                  opacity: 0,
-                  animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
-                  pointerEvents: "none",
-                  zIndex: 9,
-                }}
-              />
-            )}
           </div>
         </div>
       </div>
