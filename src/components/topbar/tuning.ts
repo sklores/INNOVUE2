@@ -24,7 +24,7 @@ export const SUN = {
 // ===== Lighthouse =====
 export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png",
-  height: 156,
+  height: 160,
   offsetLeft: 10,
   offsetBottom: 12,
 
@@ -37,8 +37,8 @@ export const LIGHTHOUSE = {
 
 // ===== Rock base =====
 export const ROCK = {
-  width: 130,
-  height: 35,
+  width: 135,
+  height: 45,
   offsetLeft: 0,
   offsetBottom: 0,
 };
