@@ -11,15 +11,22 @@ type CommonProps = {
 type Variant = "back" | "front";
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
- * TARGET_LEVEL_PX:
- * The waterline (baseline) height above the *bottom of the scene* when salesRatio = 1.0.
- * Increase if you want it to climb higher (e.g., up the lighthouse), decrease to lower.
- * Tune this by eye after you paste: 110 is a good starting guess for your screenshot.
+ * MAX_WATERLINE_PX:
+ *  The highest baseline we allow at salesRatio = 1.0 (px from scene bottom).
+ *  Increase to let the water rise higher; decrease to lower the cap.
+ *  Tune by eye — ~72..84 usually hits "just under the first window".
  */
-const TARGET_LEVEL_PX = 110;
+const MAX_WATERLINE_PX = 76;
+
+/** Back wave sits a bit lower than front to keep depth */
+const PARALLAX_BACK_PX = 4;
+
+/** Height of the wave band (must also match CSS .tb-waves height via inline style) */
+const BAND_HEIGHT = 64;
 
 /** Build a wave path sized to the *band height* (not the full scene). */
 function buildWavePath(
@@ -29,7 +36,7 @@ function buildWavePath(
   yFromBottom: number
 ) {
   const seg = totalWidth / 4;
-  const yBase = bandHeight - yFromBottom; // path baseline
+  const yBase = bandHeight - yFromBottom; // path baseline inside band
   let d = `M 0 ${yBase}`;
   d += ` C ${seg * 0.5} ${yBase - amplitudePx}, ${seg * 0.5} ${
     yBase + amplitudePx
@@ -37,7 +44,7 @@ function buildWavePath(
   d += ` S ${seg * 1.5} ${yBase + amplitudePx}, ${seg * 2} ${yBase}`;
   d += ` S ${seg * 2.5} ${yBase + amplitudePx}, ${seg * 3} ${yBase}`;
   d += ` S ${seg * 3.5} ${yBase + amplitudePx}, ${seg * 4} ${yBase}`;
-  // Close down to the band bottom so there is NEVER a gap
+  // Always close to band bottom so there is NEVER a gap
   d += ` L ${totalWidth} ${bandHeight} L 0 ${bandHeight} Z`;
   return d;
 }
@@ -52,46 +59,37 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   const sceneW = sceneSize.width;
   const r = clamp01(salesRatio);
 
-  // --- Band height ---
-  // Keep a big enough band that we can raise the waterline without hitting the top of the band.
-  // Using a constant makes the layout stable and prevents “jumping” as sales change.
-  const bandH = Math.max(64, TARGET_LEVEL_PX + 40); // 40px buffer above the target
+  // Use a fixed band (stable layout)
+  const bandH = BAND_HEIGHT;
   const scrollW = sceneW * 2; // 2x width so it can scroll
 
-  // --- amplitude mapping (same feel you liked) ---
-  // Baseline at r=0 (very low red)
-  const baseBackLow = 3;    // px
-  const baseFrontLow = 4;   // px
-  // Targets at r=1 (top green) – strong crests
-  const targetBack = 22;    // px
-  const targetFront = 28;   // px
-
-  const ampBack = Math.round(lerp(baseBackLow, targetBack, r));
+  // --- amplitude mapping (same feel; front bigger than back) ---
+  const baseBackLow = 3;   // px at r=0
+  const baseFrontLow = 4;  // px at r=0
+  const targetBack   = 22; // px at r=1
+  const targetFront  = 28; // px at r=1
+  const ampBack  = Math.round(lerp(baseBackLow,  targetBack,  r));
   const ampFront = Math.round(lerp(baseFrontLow, targetFront, r));
 
-  // --- low-sales waterline (yFromBottom) inside the band ---
-  const baseBackYLow = 20;
+  // --- low-sales baseline (yFromBottom) inside the band ---
+  const baseBackYLow  = 20;
   const baseFrontYLow = 10;
 
-  // --- desired waterline at max sales (yFromBottom) inside the band ---
-  // Since the band is bottom-aligned to the scene, yFromBottom at target is simply TARGET_LEVEL_PX.
-  const targetY = TARGET_LEVEL_PX;
+  // Desired waterline at this sales:
+  // raise smoothly from low baseline toward MAX_WATERLINE_PX, but never exceed a safe
+  // value that preserves wave shape (need some headroom above the baseline).
+  const minBaselineBack  = ampBack  + 4; // safety: baseline must be above crest bottom
+  const minBaselineFront = ampFront + 4;
 
-  // A tiny parallax so the back layer sits slightly lower than the front at all times
-  const parallaxBack = 4; // px
+  // Target for this sales, capped so front/back remain visible.
+  const targetYFront = clamp(MAX_WATERLINE_PX, minBaselineFront, bandH - 2);
+  const targetYBack  = clamp(MAX_WATERLINE_PX - PARALLAX_BACK_PX, minBaselineBack, bandH - 2);
 
-  // Smooth proportional climb from low baseline to target level
-  const yFromBottomBack = Math.min(
-    bandH - 2, // never exceed bandH (keep 2px safety)
-    Math.max(0, Math.round(lerp(baseBackYLow, targetY - parallaxBack, r)))
-  );
-  const yFromBottomFront = Math.min(
-    bandH - 2,
-    Math.max(0, Math.round(lerp(baseFrontYLow, targetY, r)))
-  );
+  const yFromBottomBack  = clamp(Math.round(lerp(baseBackYLow,  targetYBack,  r)),  minBaselineBack,  bandH - 2);
+  const yFromBottomFront = clamp(Math.round(lerp(baseFrontYLow, targetYFront, r)), minBaselineFront, bandH - 2);
 
   // --- speed: a touch faster with high sales (still calm) ---
-  const durBack = Math.max(8, (reducedMotion ? 18 : 16) - r * 5);
+  const durBack  = Math.max(8, (reducedMotion ? 18 : 16) - r * 5);
   const durFront = Math.max(6, (reducedMotion ? 14 : 12) - r * 5);
 
   const isBack = variant === "back";
