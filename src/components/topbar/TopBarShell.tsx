@@ -21,7 +21,7 @@ import { WavesBack, WavesFront } from "./Waves";
 import RockBase from "./RockBase";
 import Weather from "./Weather";
 import Birds from "./Birds";
-import GlowLogo from "./GlowLogo";  // ⬅️ NEW
+import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
 
 const TopBarShell: React.FC = () => {
@@ -225,11 +225,9 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* Centered client logo with warm constant glow */}
+            {/* Centered client logo with warm glow (boosts on flash) */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              {/* Subtle constant halo behind the logo */}
-              <GlowLogo />
-              {/* The logo itself */}
+              <GlowLogo boost={flash} />
               <ClientLogo />
             </div>
 
@@ -244,7 +242,7 @@ const TopBarShell: React.FC = () => {
                   height: INNOVUE_FILL.height,
                   borderRadius: INNOVUE_FILL.radius,
                   background: INNOVUE_FILL.color,
-                  filter: `blur(${INNOVUE_FILL.blurPx}px)`,
+                  filter: `blur(${INNOVUE_FILL.blurPx})`,
                   opacity: 0,
                   animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
                   pointerEvents: "none",
