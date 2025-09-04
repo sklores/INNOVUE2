@@ -14,7 +14,7 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 /**
  * PuffyCloud
  * - Organic "metaball" cloud using SVG circles + gooey filter
- * - Soft lighting via gradient + night tint
+ * - Subtle top light via radial gradient (no blocky rect underlay)
  */
 const PuffyCloud: React.FC<{
   xPct: number;          // left position in %
@@ -25,22 +25,21 @@ const PuffyCloud: React.FC<{
   bobSec: number;        // vertical bob duration
   delay: number;         // animation delay (s)
 }> = ({ xPct, yPx, scale, hue, driftSec, bobSec, delay }) => {
-  // day → night color
+  // day → night tint
   const topCol   = `rgba(${Math.round(255 - 30*hue)}, ${Math.round(255 - 35*hue)}, ${Math.round(255 - 55*hue)}, 0.95)`;
   const midCol   = `rgba(${Math.round(245 - 45*hue)}, ${Math.round(250 - 50*hue)}, ${Math.round(255 - 60*hue)}, 0.95)`;
-  const shadowCol= `rgba(${Math.round(140 - 30*hue)}, ${Math.round(160 - 30*hue)}, ${Math.round(180 - 30*hue)}, 0.25)`;
 
   // cloud geometry (five lobes)
   const R = 22 * scale;
   const offsets = [
-    { cx: 0,    cy: 0,    r: R * 1.05 },
-    { cx: -R,   cy: 6,    r: R * 0.90 },
-    { cx:  R,   cy: 4,    r: R * 0.95 },
-    { cx: -R*1.6, cy: 10, r: R * 0.75 },
-    { cx:  R*1.6, cy: 12, r: R * 0.70 },
+    { cx: 0,      cy: 0,   r: R * 1.05 },
+    { cx: -R,     cy: 6,   r: R * 0.90 },
+    { cx:  R,     cy: 4,   r: R * 0.95 },
+    { cx: -R*1.6, cy: 10,  r: R * 0.75 },
+    { cx:  R*1.6, cy: 12,  r: R * 0.70 },
   ];
 
-  const id = useMemo(() => `goo-${Math.random().toString(36).slice(2)}`, []);
+  const id = useMemo(() => `cloud-${Math.random().toString(36).slice(2)}`, []);
 
   return (
     <div
@@ -51,7 +50,8 @@ const PuffyCloud: React.FC<{
         transform: "translateX(-50%)",
         animation: `cloud-drift ${driftSec}s linear ${-delay}s infinite`,
         willChange: "transform",
-        filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.05))",
+        filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.06))",
+        pointerEvents: "none",
       }}
     >
       <svg
@@ -84,33 +84,17 @@ const PuffyCloud: React.FC<{
           {/* soft top light */}
           <radialGradient id={`${id}-fill`} cx="40%" cy="30%" r="80%">
             <stop offset="0%"  stopColor={topCol} />
-            <stop offset="55%" stopColor={midCol} />
+            <stop offset="60%" stopColor={midCol} />
             <stop offset="100%" stopColor={midCol} />
           </radialGradient>
-
-          {/* gentle underside shadow band */}
-          <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="rgba(0,0,0,0)" />
-            <stop offset="70%"  stopColor={shadowCol} />
-            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-          </linearGradient>
         </defs>
 
         <g filter={`url(#${id})`}>
-          {/* main puffy body */}
           <g fill={`url(#${id}-fill)`}>
             {offsets.map((o, i) => (
               <circle key={i} cx={o.cx} cy={o.cy} r={o.r} />
             ))}
           </g>
-          {/* soft underside shadow */}
-          <rect
-            x={-R*2.6}
-            y={R*0.6}
-            width={R*5.2}
-            height={R*1.0}
-            fill={`url(#${id}-shade)`}
-          />
         </g>
       </svg>
     </div>
@@ -123,26 +107,66 @@ const Weather: React.FC<Props> = ({
   reducedMotion,
 }) => {
   const t = clamp01(intensity);
-
   if (condition === "clear") return null;
 
-  // night heuristic: darker sky elsewhere usually, but we can tint clouds a hair at night
-  const isNight = false; // hook up to your SkyLayer time if you want
+  // Basic night tint: if you have a phase hook, wire it here instead of constant false
+  const isNight = false;
   const hue = isNight ? 1 : 0;
 
-  const cloudCount = 2 + Math.round(2 * t); // 2..4 clouds
+  // --- Cloud placement logic ---
+  // Ensure we cover LEFT / MID / RIGHT at least once,
+  // then add extra clouds randomly as intensity grows.
+  const baseClouds = Math.min(3, 2 + Math.round(t * 2)); // 2..3
+  const extra = Math.max(0, Math.round(t * 1));          // +0..1
+  const total = baseClouds + extra;
+
   const clouds = useMemo(() => {
-    return Array.from({ length: cloudCount }).map((_, i) => {
-      const x = 18 + i * (60 / cloudCount) + Math.random() * 8;  // stagger
-      const y = 12 + (i % 2) * 10 + Math.random() * 6;           // px from top
-      const sc = 0.95 + Math.random() * 0.6;                      // 0.95..1.55
-      const drift = (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1); // seconds
-      const bob = (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1);
-      const delay = Math.random() * 6;
-      return { x, y, sc, drift, bob, delay };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cloudCount, reducedMotion, hue]);
+    const buckets = [
+      { min: 6,  max: 34 }, // LEFT
+      { min: 35, max: 65 }, // MID
+      { min: 55, max: 90 }, // RIGHT
+    ];
+    const pick = (min: number, max: number) => min + Math.random() * (max - min);
+
+    const arr: { x: number; y: number; sc: number; drift: number; bob: number; delay: number }[] = [];
+
+    // Seed left/mid/right at least once if we have >=3 clouds
+    if (total >= 3) {
+      buckets.forEach(({ min, max }) => {
+        arr.push({
+          x: pick(min, max),
+          y: 12 + Math.random() * 10,
+          sc: 0.95 + Math.random() * 0.5,
+          drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
+          bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
+          delay: Math.random() * 6,
+        });
+      });
+    } else {
+      // With fewer clouds, still allow left placement
+      arr.push({
+        x: pick(8, 60),
+        y: 12 + Math.random() * 10,
+        sc: 0.95 + Math.random() * 0.5,
+        drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
+        bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
+        delay: Math.random() * 6,
+      });
+    }
+
+    // Add any extras randomly across the full span
+    for (let i = arr.length; i < total; i++) {
+      arr.push({
+        x: pick(6, 90),
+        y: 12 + Math.random() * 10,
+        sc: 0.95 + Math.random() * 0.5,
+        drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
+        bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
+        delay: Math.random() * 6,
+      });
+    }
+    return arr;
+  }, [total, reducedMotion]);
 
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
