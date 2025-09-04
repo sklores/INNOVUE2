@@ -9,7 +9,7 @@
     border: var(--frame-stroke-width, 1px) solid var(--frame-stroke, #E6EBF3);
     background: var(--mat1-color, #E6E9F0);
     box-shadow: var(--frame-shadow, 0 10px 22px rgba(0,0,0,0.08));
-    padding: clamp(var(--mat1-min, 4px), var(--mat1-vw, 1vw), var(--mat1-max, 6px));
+    padding: clamp(var(--mat1-min, 6px), var(--mat1-vw, 1.6vw), var(--mat1-max, 8px));
     position: relative;
   }
   
@@ -17,7 +17,7 @@
     border-radius: calc(var(--frame-outer-radius, 16px) - 2px);
     background: var(--mat2-color, #FFFFFF);
     overflow: hidden;
-    padding: clamp(var(--mat2-min, 2px), var(--mat2-vw, 0.8vw), var(--mat2-max, 4px));
+    padding: clamp(var(--mat2-min, 4px), var(--mat2-vw, 1.2vw), var(--mat2-max, 6px));
     position: relative;
   }
   
@@ -69,7 +69,7 @@
     width: 100%;
     box-sizing: border-box;
     padding-inline: 12px;
-    margin-top: -30px; /* more overlap to reduce white band */
+    margin-top: -26px; /* overlap enough, but leave waves visible */
     position: relative;
     z-index: 20;
   }

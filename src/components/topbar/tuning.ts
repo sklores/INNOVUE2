@@ -2,7 +2,7 @@
 
 export const TOPBAR = {
   width: 360,
-  height: 240,  // taller so scenic scene fills more (~+20px)
+  height: 260,  // taller scenic frame so waves & sky fully fit
   radius: 12,
 };
 
@@ -21,7 +21,7 @@ export const SUN = {
   offsetY: 12,
 };
 
-// ===== Lighthouse (left) =====
+// ===== Lighthouse =====
 export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png",
   height: 156,
@@ -53,7 +53,7 @@ export const BADGE = {
   centerOffsetX: 0,
 };
 
-// ===== Frame (Option A slim mats) =====
+// ===== Frame (slightly larger side/top borders) =====
 export const FRAME = {
   strokeColor: "#E6EBF3",
   strokeWidth: 1,
@@ -61,17 +61,17 @@ export const FRAME = {
   innerRadius: 12,
 
   mat1: {
-    min: 4,
-    max: 6,
-    vw: "1vw",
-    color: "#E6E9F0", // outer mat blends with page bg
+    min: 6,  // outer mat thickness
+    max: 8,
+    vw: "1.6vw",
+    color: "#E6E9F0",  // blends with page background
   },
 
   mat2: {
-    min: 2,
-    max: 4,
-    vw: "0.8vw",
-    color: "#FFFFFF", // crisp inner white edge
+    min: 4,  // inner mat thickness
+    max: 6,
+    vw: "1.2vw",
+    color: "#FFFFFF",  // crisp white edge
   },
 
   shadow: "0 10px 22px rgba(0,0,0,0.08)",
