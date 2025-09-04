@@ -11,13 +11,15 @@ type CommonProps = {
 type Variant = "back" | "front";
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
- * Controls how high the waterline rises at salesRatio = 1.0 (in pixels).
- * Increase to raise the final water level; decrease to lower it.
- * This is a delta relative to the low-sales baseline inside the band.
+ * TARGET_LEVEL_PX:
+ * The waterline (baseline) height above the *bottom of the scene* when salesRatio = 1.0.
+ * Increase if you want it to climb higher (e.g., up the lighthouse), decrease to lower.
+ * Tune this by eye after you paste: 110 is a good starting guess for your screenshot.
  */
-const LIGHTHOUSE_BASE_OFFSET = 46;
+const TARGET_LEVEL_PX = 110;
 
 /** Build a wave path sized to the *band height* (not the full scene). */
 function buildWavePath(
@@ -27,7 +29,7 @@ function buildWavePath(
   yFromBottom: number
 ) {
   const seg = totalWidth / 4;
-  const yBase = bandHeight - yFromBottom;
+  const yBase = bandHeight - yFromBottom; // path baseline
   let d = `M 0 ${yBase}`;
   d += ` C ${seg * 0.5} ${yBase - amplitudePx}, ${seg * 0.5} ${
     yBase + amplitudePx
@@ -50,42 +52,42 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   const sceneW = sceneSize.width;
   const r = clamp01(salesRatio);
 
-  // Band height — we keep it at 64 for generous vertical room
-  const bandH = 64;
+  // --- Band height ---
+  // Keep a big enough band that we can raise the waterline without hitting the top of the band.
+  // Using a constant makes the layout stable and prevents “jumping” as sales change.
+  const bandH = Math.max(64, TARGET_LEVEL_PX + 40); // 40px buffer above the target
   const scrollW = sceneW * 2; // 2x width so it can scroll
 
   // --- amplitude mapping (same feel you liked) ---
   // Baseline at r=0 (very low red)
   const baseBackLow = 3;    // px
   const baseFrontLow = 4;   // px
-  // Targets at r=1 (top green)
+  // Targets at r=1 (top green) – strong crests
   const targetBack = 22;    // px
   const targetFront = 28;   // px
 
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   const ampBack = Math.round(lerp(baseBackLow, targetBack, r));
   const ampFront = Math.round(lerp(baseFrontLow, targetFront, r));
 
-  // --- baseline height inside the band ---
-  // Low-sales baselines (yFromBottom): higher value -> lower baseline (further from top)
+  // --- low-sales waterline (yFromBottom) inside the band ---
   const baseBackYLow = 20;
   const baseFrontYLow = 10;
 
-  // We raise the waterline smoothly with sales.
-  // Convert the LIGHTHOUSE_BASE_OFFSET (px) into a delta in "yFromBottom" units.
-  // Since the band is in pixels, we can subtract a delta directly (raising the baseline).
-  const deltaY = Math.min(LIGHTHOUSE_BASE_OFFSET, bandH - 4); // safety clamp
+  // --- desired waterline at max sales (yFromBottom) inside the band ---
+  // Since the band is bottom-aligned to the scene, yFromBottom at target is simply TARGET_LEVEL_PX.
+  const targetY = TARGET_LEVEL_PX;
 
-  // Slight parallax offset so back layer sits a touch lower
+  // A tiny parallax so the back layer sits slightly lower than the front at all times
   const parallaxBack = 4; // px
 
-  const yFromBottomBack = Math.max(
-    0,
-    Math.round(baseBackYLow - r * (deltaY) + parallaxBack)
+  // Smooth proportional climb from low baseline to target level
+  const yFromBottomBack = Math.min(
+    bandH - 2, // never exceed bandH (keep 2px safety)
+    Math.max(0, Math.round(lerp(baseBackYLow, targetY - parallaxBack, r)))
   );
-  const yFromBottomFront = Math.max(
-    0,
-    Math.round(baseFrontYLow - r * (deltaY))
+  const yFromBottomFront = Math.min(
+    bandH - 2,
+    Math.max(0, Math.round(lerp(baseFrontYLow, targetY, r)))
   );
 
   // --- speed: a touch faster with high sales (still calm) ---
