@@ -51,29 +51,29 @@ const Marquee: React.FC = () => {
   const onEnter = () => setPaused(true);
   const onLeave = () => setPaused(false);
 
-  // === Styles (match KPI tiles; correct gutters/padding) ===
+  // === Styles ===
   const styles = {
     card: {
       border: "1px solid #E1E2E6",
       borderRadius: 16,
-      background: "#FFFFFF",
+      background: "#f2f5f9",              // Option 1 (Soft Mist)
       boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
-      padding: 14,    // same padding feel as KPI tiles
+      padding: 14,
       marginTop: 12,
       position: "relative" as const,
       pointerEvents: "auto" as const,
     },
 
-    // One single row: tabs + logo — centered, no wrap (scrolls if needed)
+    // One single row: tabs + logo — centered; allow horizontal scroll if needed
     topRow: {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       gap: 10,
       marginBottom: 10,
-      paddingInline: 12,     // gutters
+      paddingInline: 12,     // same gutters feel as KPI tiles
       whiteSpace: "nowrap" as const,
-      overflowX: "auto" as const, // if too narrow, let the row scroll
+      overflowX: "auto" as const,
       scrollbarWidth: "none" as const,
       msOverflowStyle: "none" as const,
     },
@@ -157,7 +157,7 @@ const Marquee: React.FC = () => {
 
   return (
     <section style={styles.card}>
-      {/* One single row: tabs + logo; centered; no wrap */}
+      {/* Single top row: tabs + GCDC logo */}
       <div style={styles.topRow as React.CSSProperties}>
         {SOURCES.map(s => (
           <button
@@ -173,7 +173,7 @@ const Marquee: React.FC = () => {
         </div>
       </div>
 
-      {/* Ticker (auto-scroll; pause on hover/touch) */}
+      {/* Ticker */}
       <div
         style={styles.tickerWrap as React.CSSProperties}
         onMouseEnter={onEnter}
@@ -196,7 +196,7 @@ const Marquee: React.FC = () => {
         ))}
       </div>
 
-      {/* keyframes for the marquee */}
+      {/* keyframes */}
       <style>{`
         @keyframes marquee {
           0%   { transform: translateX(0) }
