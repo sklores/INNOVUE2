@@ -1,3 +1,4 @@
+// src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TOPBAR,
@@ -6,7 +7,6 @@ import {
   LIGHTHOUSE,
   BEAM_FLASH,
   BADGE,
-  INNOVUE_FILL,
   ROCK,
   WEATHER,
   BIRDS,
@@ -26,6 +26,7 @@ const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
+  // Scene size
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneW, setSceneW] = useState(360);
   useLayoutEffect(() => {
@@ -42,6 +43,10 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Sales ratio (0..1) – you’d wire this to real KPI
+  const [salesRatio] = useState(0.5);
+
+  // One-shot flash beam
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -55,36 +60,6 @@ const TopBarShell: React.FC = () => {
       clearTimeout(t2);
     };
   }, []);
-
-  const [salesRatio, setSalesRatio] = useState(0.25); // placeholder for real KPI binding
-
-  // 🎯 Map sales ratio to waterline + wave amplitude
-  const minBaseline = 0;
-  const maxBaseline = 45; // just below lighthouse window
-  const minAmplitude = 3;
-  const maxAmplitude = 15;
-
-  const baseline = minBaseline + (maxBaseline - minBaseline) * salesRatio;
-  const amplitude = minAmplitude + (maxAmplitude - minAmplitude) * salesRatio;
-
-  const lanternX =
-    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom =
-    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
-  const lanternY = TOPBAR.height - lanternY_fromBottom;
-
-  const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
-  const targetY = INNOVUE_FILL.top + INNOVUE_FILL.height / 2;
-
-  const dx = targetX - lanternX;
-  const dy = targetY - lanternY;
-  const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
-
-  const span = BEAM_FLASH.sweepSpanDeg ?? 44;
-  const startDeg = angleDeg - span / 2;
-  const sweepDeg = span;
-
-  const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
 
   return (
     <div
@@ -103,13 +78,7 @@ const TopBarShell: React.FC = () => {
           ["--frame-stroke-width" as any]: `${FRAME.strokeWidth}px`,
           ["--frame-shadow" as any]: FRAME.shadow,
           ["--mat1-color" as any]: FRAME.mat1.color,
-          ["--mat1-min" as any]: `${FRAME.mat1.min}px`,
-          ["--mat1-max" as any]: `${FRAME.mat1.max}px`,
-          ["--mat1-vw" as any]: FRAME.mat1.vw,
           ["--mat2-color" as any]: FRAME.mat2.color,
-          ["--mat2-min" as any]: `${FRAME.mat2.min}px`,
-          ["--mat2-max" as any]: `${FRAME.mat2.max}px`,
-          ["--mat2-vw" as any]: FRAME.mat2.vw,
           ["--frame-inner-radius" as any]: `${FRAME.innerRadius}px`,
           ["--scene-inset-shadow" as any]: FRAME.sceneInsetShadow,
         }}
@@ -125,7 +94,7 @@ const TopBarShell: React.FC = () => {
               overflow: "hidden",
             }}
           >
-            {/* back -> front */}
+            {/* back → front */}
             <div className="topbar-layer" style={{ zIndex: 1 }}>
               <SkyLayer />
             </div>
@@ -142,10 +111,8 @@ const TopBarShell: React.FC = () => {
 
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
-                sceneSize={{ width: sceneW, height: TOPBAR.height }}
+                sceneWidth={sceneW}
                 salesRatio={salesRatio}
-                baseline={baseline}
-                amplitude={amplitude}
                 reducedMotion={reducedMotion}
               />
             </div>
@@ -167,10 +134,8 @@ const TopBarShell: React.FC = () => {
 
             <div className="topbar-layer" style={{ zIndex: 5 }}>
               <WavesFront
-                sceneSize={{ width: sceneW, height: TOPBAR.height }}
+                sceneWidth={sceneW}
                 salesRatio={salesRatio}
-                baseline={baseline}
-                amplitude={amplitude}
                 reducedMotion={reducedMotion}
               />
             </div>
@@ -184,7 +149,7 @@ const TopBarShell: React.FC = () => {
             </div>
 
             <div className="topbar-layer" style={{ zIndex: 7 }}>
-              <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
+              <Lighthouse beamActive={LIGHTHOUSE.beamOn} />
             </div>
 
             <div className="topbar-layer" style={{ zIndex: 8 }}>
@@ -197,18 +162,6 @@ const TopBarShell: React.FC = () => {
                 />
               </div>
             </div>
-
-            {flash && (
-              <LightBeam
-                originX={lanternX}
-                originY={lanternY}
-                startDeg={startDeg}
-                sweepDeg={sweepDeg}
-                durationMs={BEAM_FLASH.durationMs}
-                beamColor={BEAM_FLASH.beamColor}
-                beamWidthDeg={BEAM_FLASH.beamWidthDeg}
-              />
-            )}
 
             <div className="topbar-layer" style={{ zIndex: 10 }}>
               <ClientLogo />
