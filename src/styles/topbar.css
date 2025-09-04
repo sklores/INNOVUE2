@@ -66,7 +66,7 @@
     position: absolute;
     left: 0;
     bottom: 0;
-    height: 58px;
+    height: 48px;
     animation-name: tb-wave-scroll;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
