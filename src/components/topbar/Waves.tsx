@@ -3,14 +3,14 @@ import React, { useMemo } from "react";
 
 type CommonProps = {
   sceneSize: { width: number; height: number };
-  salesRatio: number; // 0..1
+  /** 0..1 sales score (0 = red/low, 1 = top green) */
+  salesRatio: number;
   reducedMotion?: boolean;
 };
 
 type Variant = "back" | "front";
 
-const clamp = (v: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, v));
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 /** Build a wave path sized to the *band height* (not the full scene). */
 function buildWavePath(
@@ -40,25 +40,29 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   variant,
 }) => {
   const sceneW = sceneSize.width;
-  const bandH = 48; // 👈 must match CSS .tb-waves { height: 48px }
+  const bandH = 48; // must match CSS .tb-waves { height: 48px }
   const scrollW = sceneW * 2; // 2x width so it can scroll
-  const r = clamp(salesRatio ?? 0, 0, 1);
+  const r = clamp01(salesRatio);
 
-  // amplitudes within a 48px band
-  const ampBack = reducedMotion ? 4 : Math.round(3 + r * 6); // 3..9
-  const ampFront = reducedMotion ? 6 : Math.round(4 + r * 9); // 4..13
+  // --- amplitude mapping ---
+  // Baselines represent "very low red" water (subtle). At top green, waves are 4×.
+  const baseBackLow = 3;  // px at r=0
+  const baseFrontLow = 4; // px at r=0
+  const factor = 1 + 3 * r; // 1x .. 4x
+  const ampBack = Math.round((reducedMotion ? baseBackLow : baseBackLow) * factor);
+  const ampFront = Math.round((reducedMotion ? baseFrontLow : baseFrontLow) * factor);
 
-  // speeds (lower = faster)
-  const durBack = reducedMotion ? 18 : 16 - r * 6; // 10..16s
-  const durFront = reducedMotion ? 14 : 12 - r * 6; // 6..12s
+  // speeds (slightly faster with higher sales; keep gentle)
+  const durBack = (reducedMotion ? 18 : 16) - r * 3;  // seconds
+  const durFront = (reducedMotion ? 14 : 12) - r * 3; // seconds
 
-  // baseline within the band
+  // where they sit from the bottom *of the band*
   const baseBack = 20;
   const baseFront = 10;
 
   const isBack = variant === "back";
   const amp = isBack ? ampBack : ampFront;
-  const dur = isBack ? durBack : durFront;
+  const dur = Math.max(6, isBack ? durBack : durFront);
   const base = isBack ? baseBack : baseFront;
   const fill = isBack
     ? "rgba(180, 220, 255, 0.35)"
@@ -89,7 +93,7 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   );
 };
 
-// Public exports: use these two so we can place them in different z-index layers.
+// Public exports: two layers so you can sandwich the rock between them.
 export const WavesBack: React.FC<CommonProps> = (p) => (
   <WavesLayer {...p} variant="back" />
 );

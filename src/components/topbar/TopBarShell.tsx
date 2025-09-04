@@ -24,6 +24,16 @@ import Birds from "./Birds";
 import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
 
+// Pull Sales from the same sheet source as KPIs
+import { fetchSheetValues } from "../../features/data/sheets/fetch";
+import { sheetMap } from "../../config/sheetMap";
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+const toNum = (v: unknown) => {
+  const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
+
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
@@ -44,6 +54,75 @@ const TopBarShell: React.FC = () => {
     typeof window !== "undefined" &&
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Waves ← Sales (0..1). Start low so waves look "very low red" before load.
+  const [salesRatio, setSalesRatio] = useState(0.10);
+
+  // Helper: compute 0..1 score from Sales row (using green/red thresholds if present)
+  const computeSalesRatio = (rows: string[][]) => {
+    try {
+      // Find Sales row per sheetMap
+      let salesRow: string[] | undefined = undefined;
+      for (const idx of sheetMap.kpiRows) {
+        const r = rows[idx] || [];
+        const label = String(r[0] ?? "").trim().toLowerCase();
+        if (!label) continue;
+        if (label === "sales") {
+          salesRow = r;
+          break;
+        }
+      }
+      if (!salesRow) return 0.1;
+
+      const val = toNum(salesRow[1]);        // value
+      const greenAt = toNum(salesRow[2]);    // upper target
+      const redAt = toNum(salesRow[3]);      // lower bound
+      if (val == null) return 0.1;
+
+      // If we have green/red, map linearly (higher is better for Sales)
+      if (greenAt != null && redAt != null && greenAt !== redAt) {
+        const t = (val - redAt) / (greenAt - redAt);
+        return clamp01(t);
+      }
+
+      // If unit is percentage (column 5), use val/100 as a fallback
+      const unitToken = String(salesRow[5] ?? "").trim().toLowerCase();
+      if (unitToken === "%" || unitToken === "percent") {
+        return clamp01((val as number) / 100);
+      }
+
+      // Otherwise, heuristically map positive sales to mid-high
+      return clamp01((val as number) > 0 ? 0.6 : 0.1);
+    } catch {
+      return 0.1;
+    }
+  };
+
+  // Fetch on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await fetchSheetValues();
+        setSalesRatio(computeSalesRatio(rows));
+      } catch {
+        // keep default
+      }
+    })();
+  }, []);
+
+  // Also refresh when the app "Refresh" event fires
+  useEffect(() => {
+    const onRefresh = async () => {
+      try {
+        const rows = await fetchSheetValues();
+        setSalesRatio(computeSalesRatio(rows));
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("innovue:refresh", onRefresh);
+    return () => window.removeEventListener("innovue:refresh", onRefresh);
+  }, []);
 
   // One-shot flash on mount/refresh
   const [flash, setFlash] = useState(false);
@@ -91,9 +170,6 @@ const TopBarShell: React.FC = () => {
   const span = BEAM_FLASH.sweepSpanDeg ?? 44;
   const startDeg = angleDeg - span / 2;
   const sweepDeg = span;
-
-  // Placeholder until wired to KPI
-  const salesRatio = 0.62;
 
   const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
 
@@ -231,7 +307,7 @@ const TopBarShell: React.FC = () => {
               <ClientLogo />
             </div>
 
-            {/* (Optional) INNOVUE fill effect – enable if desired */}
+            {/* (Optional) INNOVUE fill effect – enable if desired) */}
             {false && (
               <div
                 style={{
