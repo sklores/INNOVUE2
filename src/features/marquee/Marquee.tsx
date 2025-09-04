@@ -1,13 +1,14 @@
 // src/features/marquee/Marquee.tsx
 import React, { useMemo, useState } from "react";
 
-type SourceKey = "social" | "reviews" | "bank" | "news";
+type SourceKey = "social" | "reviews" | "bank" | "news" | "ap";
 
 const SOURCES: { key: SourceKey; label: string }[] = [
   { key: "social",  label: "Social"  },
   { key: "reviews", label: "Reviews" },
   { key: "bank",    label: "Bank"    },
   { key: "news",    label: "News"    },
+  { key: "ap",      label: "A/P"     }, // NEW
 ];
 
 // Mock feed items (replace with live data later)
@@ -29,19 +30,21 @@ const MOCK_FEED: Record<SourceKey, string[]> = {
     "Local: Food Truck Fest — we’ll be there!",
     "Industry: Artisan cheese makers up 3%",
   ],
+  ap: [
+    "A/P: Vendor payment  #00482 queued",
+    "A/P: Invoice #2029 due in 3 days",
+  ],
 };
 
 const METRICS = [
   { label: "Mentions", val: 27, color: "#60a5fa" },
   { label: "New Reviews", val: 5, color: "#60a5fa" },
-  { label: "Links Clicked", val: 92, color: "#22c55e" }, // replaced Bank Today
+  { label: "Links Clicked", val: 92, color: "#22c55e" },
 ];
 
 const Marquee: React.FC = () => {
   const [active, setActive] = useState<SourceKey>("social");
   const feed = MOCK_FEED[active] ?? [];
-
-  // Flatten feed into a single long ticker string
   const ticker = useMemo(() => (feed.length ? feed.join("  •  ") : ""), [feed]);
 
   const [paused, setPaused] = useState(false);
@@ -50,7 +53,7 @@ const Marquee: React.FC = () => {
 
   // Styles
   const styles = {
-    // Outer widget: white bg + 1px border to match tiles; feels like a standalone module
+    // Outer widget: white bg + 1px border to match tiles
     card: {
       border: "1px solid #E1E2E6",
       borderRadius: 16,
@@ -63,15 +66,15 @@ const Marquee: React.FC = () => {
       pointerEvents: "auto" as const,
     },
 
-    // Title row
-    titleRow: {
+    // Header: “GCDC Live Feed”, tabs left, brand chip on the right
+    header: {
       display: "grid",
       gridTemplateColumns: "1fr auto",
       alignItems: "center",
       gap: 12,
       marginBottom: 12,
     },
-    leftTitle: {
+    leftHeader: {
       display: "flex",
       alignItems: "center",
       gap: 10,
@@ -84,7 +87,7 @@ const Marquee: React.FC = () => {
       background: "#22c55e",
       boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
     },
-    titleText: { fontWeight: 800 as const, color: "#0f172a", letterSpacing: 0.3 },
+    headerTitle: { fontWeight: 800 as const, color: "#0f172a", letterSpacing: 0.3 },
     tabs: {
       display: "flex",
       alignItems: "center",
@@ -104,25 +107,43 @@ const Marquee: React.FC = () => {
       cursor: "pointer",
     }),
 
-    // Right side: small brand mark
-    rightBrand: {
+    // Right: brand badge chip (36px) with a halo pulse
+    brandArea: {
       display: "inline-flex",
       alignItems: "center",
-      gap: 8,
+      justifyContent: "flex-end",
+      minWidth: 64, // preserve some right-side spacing
     },
-    brandWrap: {
-      width: 28,
-      height: 28,
+    brandChip: {
+      display: "inline-grid",
+      placeItems: "center",
+      width: 40, // chip shell
+      height: 40,
       borderRadius: 999,
       background: "#FFFFFF",
       border: "1px solid #E1E2E6",
-      display: "grid",
-      placeItems: "center",
       boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+      position: "relative" as const,
     },
-    brandImg: { width: 18, height: 18, objectFit: "contain" as const },
+    brandImg: {
+      width: 36,
+      height: 36,
+      objectFit: "contain" as const,
+      borderRadius: "50%",
+      zIndex: 1,
+    },
+    brandHalo: {
+      position: "absolute" as const,
+      inset: -6, // halo extends slightly beyond chip
+      borderRadius: 999,
+      background:
+        "radial-gradient(circle at center, rgba(255,247,180,0.55) 0%, rgba(255,247,180,0.12) 55%, rgba(255,247,180,0) 75%)",
+      filter: "blur(8px)",
+      animation: "brandPulse 6s ease-in-out infinite",
+      zIndex: 0,
+    },
 
-    // Ticker container with inner band color equal to bottom bar grey
+    // Ticker band (inner bg matches bottom bar)
     band: {
       border: "1px solid #E1E2E6",
       borderRadius: 12,
@@ -146,18 +167,18 @@ const Marquee: React.FC = () => {
       fontWeight: 700,
       letterSpacing: 0.2,
       padding: "8px 12px",
-      animation: `marquee 18s linear infinite`,
+      animation: `marquee 22s linear infinite`, // slower for readability
       animationPlayState: paused ? "paused" : ("running" as const),
     },
     fadeLeft: {
       position: "absolute" as const,
-      top: 0, bottom: 0, left: 0, width: 24,
+      top: 0, bottom: 0, left: 0, width: 16,
       pointerEvents: "none" as const,
       background: "linear-gradient(90deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
     },
     fadeRight: {
       position: "absolute" as const,
-      top: 0, bottom: 0, right: 0, width: 24,
+      top: 0, bottom: 0, right: 0, width: 16,
       pointerEvents: "none" as const,
       background: "linear-gradient(270deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
     },
@@ -171,7 +192,7 @@ const Marquee: React.FC = () => {
       gap: 8,
       flexWrap: "wrap" as const,
     },
-    metric: (bg: string) => ({
+    metric: (color: string) => ({
       height: 28,
       display: "inline-flex",
       alignItems: "center",
@@ -186,7 +207,7 @@ const Marquee: React.FC = () => {
       boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
     }),
     metricDot: (color: string) => ({
-      width: 6, height: 6, borderRadius: 999,
+      width: 5, height: 5, borderRadius: 999,
       background: color,
       boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
     }),
@@ -195,10 +216,12 @@ const Marquee: React.FC = () => {
   return (
     <section style={styles.card}>
       {/* Header */}
-      <div style={styles.titleRow as React.CSSProperties}>
-        <div style={styles.leftTitle as React.CSSProperties}>
+      <div style={styles.header as React.CSSProperties}>
+        <div style={styles.leftHeader as React.CSSProperties}>
           <span style={styles.liveDot} />
-          <span style={styles.titleText}>Live Feed</span>
+          <span style={styles.headerTitle}>GCDC Live Feed</span>
+
+          {/* Tabs */}
           <div style={styles.tabs as React.CSSProperties}>
             {SOURCES.map(s => (
               <button
@@ -212,9 +235,10 @@ const Marquee: React.FC = () => {
           </div>
         </div>
 
-        {/* Brand mark */}
-        <div style={styles.rightBrand as React.CSSProperties}>
-          <div style={styles.brandWrap as React.CSSProperties}>
+        {/* Brand badge chip (bigger, halo, non-clickable) */}
+        <div style={styles.brandArea as React.CSSProperties}>
+          <div style={styles.brandChip as React.CSSProperties}>
+            <div style={styles.brandHalo as React.CSSProperties} />
             <img src="/logos/gcdclogo.png" alt="GCDC" style={styles.brandImg as React.CSSProperties} />
           </div>
         </div>
@@ -230,7 +254,6 @@ const Marquee: React.FC = () => {
       >
         <div style={styles.tickerWrap as React.CSSProperties}>
           <span style={styles.tickerPill as React.CSSProperties}>
-            {/* duplicate content to loop seamlessly */}
             {ticker} &nbsp;&nbsp; {ticker}
           </span>
           <div style={styles.fadeLeft} />
@@ -250,6 +273,10 @@ const Marquee: React.FC = () => {
 
       {/* keyframes */}
       <style>{`
+        @keyframes brandPulse {
+          0%, 100% { transform: scale(0.98); opacity: 0.55; }
+          50%      { transform: scale(1.04); opacity: 0.85; }
+        }
         @keyframes marquee {
           0%   { transform: translateX(0) }
           100% { transform: translateX(-50%) }
