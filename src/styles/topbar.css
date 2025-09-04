@@ -37,8 +37,9 @@
     background: linear-gradient(#cfe9ff, #eaf6ff);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
   
-    /* Keep a bit of air inside the scene */
-    padding-bottom: 0; /* no padding; we lift waves via bottom offset instead */
+    /* Keep a bit of air inside the scene if needed.
+       We now keep waves flush via bottom: 0 on the band. */
+    padding-bottom: 0;
   }
   
   .topbar-layer {
@@ -50,23 +51,23 @@
   .topbar-scene::-webkit-scrollbar { display: none; }
   
   /* =========================
-     Waves (lifted visually; animation unchanged)
+     Waves (band can expand up to 64px at high sales)
      ========================= */
+  /* Height is set inline by WavesLayer (48..64). Keep bottom flush. */
   .tb-waves {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 0px;   /* ↑ lift the waterline so it never looks clipped */
-    height: 55px;
+    bottom: 0;
     overflow: hidden;
     pointer-events: none;
   }
   
+  /* Strip inherits height from the inline style (WavesLayer) */
   .tb-wave-strip {
     position: absolute;
     left: 0;
     bottom: 0;
-    height: 48px;
     animation-name: tb-wave-scroll;
     animation-iteration-count: infinite;
     animation-timing-function: linear;

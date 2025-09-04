@@ -40,45 +40,56 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   variant,
 }) => {
   const sceneW = sceneSize.width;
-  const bandH = 48; // must match CSS .tb-waves { height: 48px }
-  const scrollW = sceneW * 2; // 2x width so it can scroll
   const r = clamp01(salesRatio);
 
-  // --- amplitude mapping ---
-  // Baselines represent "very low red" water (subtle). At top green, waves are 4×.
-  const baseBackLow = 3;  // px at r=0
-  const baseFrontLow = 4; // px at r=0
-  const factor = 1 + 3 * r; // 1x .. 4x
-  const ampBack = Math.round((reducedMotion ? baseBackLow : baseBackLow) * factor);
-  const ampFront = Math.round((reducedMotion ? baseFrontLow : baseFrontLow) * factor);
+  // --- Band height: expand at high sales so crests can rise over the rock ---
+  // 48px normally; up to 64px when sales high.
+  const bandH = Math.round(48 + r * 16); // 48..64
 
-  // speeds (slightly faster with higher sales; keep gentle)
-  const durBack = (reducedMotion ? 18 : 16) - r * 3;  // seconds
-  const durFront = (reducedMotion ? 14 : 12) - r * 3; // seconds
+  const scrollW = sceneW * 2; // 2x width so it can scroll
 
-  // where they sit from the bottom *of the band*
-  const baseBack = 20;
-  const baseFront = 10;
+  // --- amplitude mapping (storm surge at r=1) ---
+  // Baseline at r=0 (very low red)
+  const baseBackLow = 3;    // px
+  const baseFrontLow = 4;   // px
+  // Targets at r=1 (top green)
+  const targetBack = 22;    // px
+  const targetFront = 28;   // px
+
+  // Ease amplitude toward target
+  const ease = (a: number, b: number, t: number) => a + (b - a) * t;
+  const ampBack = Math.round(ease(baseBackLow, targetBack, r));
+  const ampFront = Math.round(ease(baseFrontLow, targetFront, r));
+
+  // --- Baseline height: raise waterline as sales increase ---
+  // yFromBottom (within band): lower number = closer to bottom, higher = baseline up
+  const baseBackY = Math.round(20 - r * 6);   // 20→14
+  const baseFrontY = Math.round(10 - r * 4);  // 10→6
+
+  // --- speed: a touch faster with high sales (still calm) ---
+  const durBack = Math.max(8, (reducedMotion ? 18 : 16) - r * 5);
+  const durFront = Math.max(6, (reducedMotion ? 14 : 12) - r * 5);
 
   const isBack = variant === "back";
   const amp = isBack ? ampBack : ampFront;
-  const dur = Math.max(6, isBack ? durBack : durFront);
-  const base = isBack ? baseBack : baseFront;
+  const dur = isBack ? durBack : durFront;
+  const yFromBottom = isBack ? baseBackY : baseFrontY;
+
   const fill = isBack
     ? "rgba(180, 220, 255, 0.35)"
     : "rgba(120, 200, 255, 0.55)";
   const extraClass = isBack ? "" : " tb-wave-front";
 
   const path = useMemo(
-    () => buildWavePath(scrollW, bandH, amp, base),
-    [scrollW, bandH, amp, base]
+    () => buildWavePath(scrollW, bandH, amp, yFromBottom),
+    [scrollW, bandH, amp, yFromBottom]
   );
 
   return (
-    <div className={"tb-waves"} aria-hidden>
+    <div className={"tb-waves"} aria-hidden style={{ height: bandH }}>
       <div
         className={"tb-wave-strip" + extraClass}
-        style={{ animationDuration: `${dur}s`, animationTimingFunction: "linear" }}
+        style={{ animationDuration: `${dur}s`, animationTimingFunction: "linear", height: bandH }}
       >
         <svg
           viewBox={`0 0 ${scrollW} ${bandH}`}
