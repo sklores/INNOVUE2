@@ -10,7 +10,6 @@ import {
   INNOVUE_FILL,
   ROCK,
   WEATHER,
-  BIRDS,
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -24,7 +23,7 @@ import Birds from "./Birds";
 import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
 
-// Pull Sales from the same sheet source as KPIs
+// Pull data from the same source as KPI tiles
 import { fetchSheetValues } from "../../features/data/sheets/fetch";
 import { sheetMap } from "../../config/sheetMap";
 
@@ -55,76 +54,74 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Waves ← Sales (0..1). Start low so waves look "very low red" before load.
+  // Waves ← Sales (0..1). Birds ← Labor (0..1, higher = more birds)
   const [salesRatio, setSalesRatio] = useState(0.10);
+  const [laborActivity, setLaborActivity] = useState(0.10);
 
-  // Helper: compute 0..1 score from Sales row (using green/red thresholds if present)
+  // Helpers to compute ratios from sheet rows
   const computeSalesRatio = (rows: string[][]) => {
     try {
-      // Find Sales row per sheetMap
-      let salesRow: string[] | undefined = undefined;
+      let salesRow: string[] | undefined;
       for (const idx of sheetMap.kpiRows) {
         const r = rows[idx] || [];
         const label = String(r[0] ?? "").trim().toLowerCase();
-        if (!label) continue;
-        if (label === "sales") {
-          salesRow = r;
-          break;
-        }
+        if (label === "sales") { salesRow = r; break; }
       }
       if (!salesRow) return 0.1;
-
-      const val = toNum(salesRow[1]);        // value
-      const greenAt = toNum(salesRow[2]);    // upper target
-      const redAt = toNum(salesRow[3]);      // lower bound
+      const val = toNum(salesRow[1]);
+      const greenAt = toNum(salesRow[2]);
+      const redAt = toNum(salesRow[3]);
       if (val == null) return 0.1;
-
-      // If we have green/red, map linearly (higher is better for Sales)
       if (greenAt != null && redAt != null && greenAt !== redAt) {
-        const t = (val - redAt) / (greenAt - redAt);
-        return clamp01(t);
+        return clamp01((val - redAt) / (greenAt - redAt));
       }
-
-      // If unit is percentage (column 5), use val/100 as a fallback
       const unitToken = String(salesRow[5] ?? "").trim().toLowerCase();
-      if (unitToken === "%" || unitToken === "percent") {
-        return clamp01((val as number) / 100);
-      }
-
-      // Otherwise, heuristically map positive sales to mid-high
+      if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
       return clamp01((val as number) > 0 ? 0.6 : 0.1);
+    } catch { return 0.1; }
+  };
+
+  const computeLaborActivity = (rows: string[][]) => {
+    try {
+      let laborRow: string[] | undefined;
+      for (const idx of sheetMap.kpiRows) {
+        const r = rows[idx] || [];
+        const label = String(r[0] ?? "").trim().toLowerCase();
+        if (label === "labor" || label === "labour") { laborRow = r; break; }
+      }
+      if (!laborRow) return 0.1;
+      const val = toNum(laborRow[1]);    // percent expected normally
+      if (val == null) return 0.1;
+      const unitToken = String(laborRow[5] ?? "").trim().toLowerCase();
+      if (unitToken === "%" || unitToken === "percent") {
+        return clamp01((val as number) / 100); // higher labor => more birds
+      }
+      // If not %, fallback to a scaled heuristic
+      return clamp01(((val as number) / 1000));
+    } catch { return 0.1; }
+  };
+
+  const refreshData = async () => {
+    try {
+      const rows = await fetchSheetValues();
+      setSalesRatio(computeSalesRatio(rows));
+      setLaborActivity(computeLaborActivity(rows));
     } catch {
-      return 0.1;
+      // keep previous
     }
   };
 
   // Fetch on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const rows = await fetchSheetValues();
-        setSalesRatio(computeSalesRatio(rows));
-      } catch {
-        // keep default
-      }
-    })();
-  }, []);
+  useEffect(() => { refreshData(); }, []);
 
   // Also refresh when the app "Refresh" event fires
   useEffect(() => {
-    const onRefresh = async () => {
-      try {
-        const rows = await fetchSheetValues();
-        setSalesRatio(computeSalesRatio(rows));
-      } catch {
-        /* ignore */
-      }
-    };
+    const onRefresh = () => { refreshData(); };
     window.addEventListener("innovue:refresh", onRefresh);
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
-  // One-shot flash on mount/refresh
+  // One-shot flash on mount/refresh (for beam + logo glow boost)
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH.enable) return;
@@ -150,7 +147,8 @@ const TopBarShell: React.FC = () => {
       );
     };
     window.addEventListener("innovue:refresh", onRefresh);
-    return () => window.removeEventListener("innovue:refresh", onRefresh);
+    return () =>
+      window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
   // Lighthouse lantern → INNOVUE target
@@ -242,9 +240,9 @@ const TopBarShell: React.FC = () => {
               <div
                 style={{
                   position: "absolute",
-                  left: ROCK.offsetLeft,
+                  left:  ROCK.offsetLeft,
                   bottom: ROCK.offsetBottom,
-                  width: ROCK.width,
+                  width:  ROCK.width,
                   height: ROCK.height,
                   pointerEvents: "none",
                 }}
@@ -262,11 +260,11 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Birds (behind lighthouse, above front waves) */}
+            {/* Birds — now tied to Labor activity */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
-                activity={BIRDS.activity}
+                activity={laborActivity}
                 reducedMotion={reducedMotion}
               />
             </div>
