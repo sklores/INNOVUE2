@@ -26,7 +26,7 @@ export const LIGHTHOUSE = {
   imgSrc: "/logos/innovuegrey.png",
   height: 160,
   offsetLeft: 10,
-  offsetBottom: 12,
+  offsetBottom: 15,
 
   beamOn: true,
   beamSweepSeconds: 6,
