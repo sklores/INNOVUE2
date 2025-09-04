@@ -10,7 +10,7 @@ import {
   INNOVUE_FILL,
   ROCK,
   WEATHER,
-  BIRDS,
+  BIRDS, // still available as a default knob if needed
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -24,7 +24,7 @@ import Birds from "./Birds";
 import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
 
-// Pull Sales from the same sheet source as KPIs
+// Pull data from the same sheet source as KPIs
 import { fetchSheetValues } from "../../features/data/sheets/fetch";
 import { sheetMap } from "../../config/sheetMap";
 
@@ -55,46 +55,62 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Waves ← Sales (0..1). Start low so waves look "very low red" before load.
+  // Waves ← Sales (0..1), Birds ← Labor (0..1)
   const [salesRatio, setSalesRatio] = useState(0.10);
+  const [laborActivity, setLaborActivity] = useState(0.05); // start very low
 
-  // Helper: compute 0..1 score from Sales row (using green/red thresholds if present)
+  // --- Helpers to compute ratios from sheet rows ---
+  const findRowByLabel = (rows: string[][], ...labels: string[]) => {
+    const norm = (s: string) => s.toLowerCase().trim();
+    const wanted = labels.map(norm);
+    for (const idx of sheetMap.kpiRows) {
+      const r = rows[idx] || [];
+      const label = norm(String(r[0] ?? ""));
+      if (wanted.includes(label)) return r;
+    }
+    return null;
+  };
+
   const computeSalesRatio = (rows: string[][]) => {
     try {
-      // Find Sales row per sheetMap
-      let salesRow: string[] | undefined = undefined;
-      for (const idx of sheetMap.kpiRows) {
-        const r = rows[idx] || [];
-        const label = String(r[0] ?? "").trim().toLowerCase();
-        if (!label) continue;
-        if (label === "sales") {
-          salesRow = r;
-          break;
-        }
-      }
-      if (!salesRow) return 0.1;
-
-      const val = toNum(salesRow[1]);        // value
-      const greenAt = toNum(salesRow[2]);    // upper target
-      const redAt = toNum(salesRow[3]);      // lower bound
+      const r = findRowByLabel(rows, "sales");
+      if (!r) return 0.1;
+      const val = toNum(r[1]);
+      const greenAt = toNum(r[2]);
+      const redAt = toNum(r[3]);
       if (val == null) return 0.1;
 
-      // If we have green/red, map linearly (higher is better for Sales)
       if (greenAt != null && redAt != null && greenAt !== redAt) {
-        const t = (val - redAt) / (greenAt - redAt);
-        return clamp01(t);
+        return clamp01((val - redAt) / (greenAt - redAt));
       }
-
-      // If unit is percentage (column 5), use val/100 as a fallback
-      const unitToken = String(salesRow[5] ?? "").trim().toLowerCase();
-      if (unitToken === "%" || unitToken === "percent") {
-        return clamp01((val as number) / 100);
-      }
-
-      // Otherwise, heuristically map positive sales to mid-high
+      const unitToken = String(r[5] ?? "").trim().toLowerCase();
+      if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
       return clamp01((val as number) > 0 ? 0.6 : 0.1);
     } catch {
       return 0.1;
+    }
+  };
+
+  const computeLaborActivity = (rows: string[][]) => {
+    try {
+      const r = findRowByLabel(rows, "labor", "labour");
+      if (!r) return 0.05;
+      const val = toNum(r[1]);
+      if (val == null) return 0.05;
+
+      // Expect Labor in %; map % → 0..1
+      const unitToken = String(r[5] ?? "").trim().toLowerCase();
+      const pct = unitToken === "%" || unitToken === "percent" ? clamp01((val as number) / 100) : clamp01((val as number) / 100);
+
+      // Compress the low end so we get almost no birds until labor is meaningful.
+      // Below ~35% => ~0.0; around 50% => ~0.3; 85–100% => ~0.9–1.0
+      const start = 0.35; // threshold where activity starts
+      const span = 0.50;  // range over which activity ramps up
+      const t = clamp01((pct - start) / span);
+      const eased = Math.pow(t, 1.2); // gentle ease so most growth is at higher labor
+      return eased;
+    } catch {
+      return 0.05;
     }
   };
 
@@ -104,8 +120,9 @@ const TopBarShell: React.FC = () => {
       try {
         const rows = await fetchSheetValues();
         setSalesRatio(computeSalesRatio(rows));
+        setLaborActivity(computeLaborActivity(rows));
       } catch {
-        // keep default
+        // keep defaults
       }
     })();
   }, []);
@@ -116,9 +133,8 @@ const TopBarShell: React.FC = () => {
       try {
         const rows = await fetchSheetValues();
         setSalesRatio(computeSalesRatio(rows));
-      } catch {
-        /* ignore */
-      }
+        setLaborActivity(computeLaborActivity(rows));
+      } catch { /* ignore */ }
     };
     window.addEventListener("innovue:refresh", onRefresh);
     return () => window.removeEventListener("innovue:refresh", onRefresh);
@@ -133,10 +149,7 @@ const TopBarShell: React.FC = () => {
       () => setFlash(false),
       BEAM_FLASH.delayMs + BEAM_FLASH.durationMs
     );
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   // Listen for global "refresh" to retrigger beam flash
@@ -153,11 +166,8 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
-  // Lighthouse lantern → INNOVUE target
-  const lanternX =
-    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom =
-    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
+  const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
+  const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom;
 
   const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
@@ -217,7 +227,7 @@ const TopBarShell: React.FC = () => {
               <SkyLayer />
             </div>
 
-            {/* Weather (clouds/rain/fog) */}
+            {/* Weather */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
@@ -228,7 +238,7 @@ const TopBarShell: React.FC = () => {
               )}
             </div>
 
-            {/* Waves behind the rock */}
+            {/* Waves back (behind rock & lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -253,8 +263,8 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Waves in front of the rock */}
-            <div className="topbar-layer" style={{ zIndex: 5 }}>
+            {/* Waves front (in front of lighthouse) */}
+            <div className="topbar-layer" style={{ zIndex: 9 }}>
               <WavesFront
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
                 salesRatio={salesRatio}
@@ -262,21 +272,21 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Birds (behind lighthouse, above front waves) */}
+            {/* Birds (behind lighthouse) — NOW TIED TO LABOR */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
-                activity={BIRDS.activity}
+                activity={laborActivity}
                 reducedMotion={reducedMotion}
               />
             </div>
 
-            {/* Lighthouse (rotating beam pauses during flash) */}
+            {/* Lighthouse */}
             <div className="topbar-layer" style={{ zIndex: 7 }}>
               <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
             </div>
 
-            {/* Sun/Moon (top-right) */}
+            {/* Sun/Moon */}
             <div className="topbar-layer" style={{ zIndex: 8 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
@@ -288,11 +298,11 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Flash beam aimed at INNOVUE text */}
+            {/* Beam flash */}
             {flash && (
               <LightBeam
                 originX={lanternX}
-                originY={lanternY}
+                originY={TOPBAR.height - (LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22)}
                 startDeg={startDeg}
                 sweepDeg={sweepDeg}
                 durationMs={BEAM_FLASH.durationMs}
@@ -301,31 +311,11 @@ const TopBarShell: React.FC = () => {
               />
             )}
 
-            {/* Centered client logo with warm glow (boosts on flash) */}
+            {/* Centered client logo + glow */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
               <GlowLogo boost={flash} />
               <ClientLogo />
             </div>
-
-            {/* (Optional) INNOVUE fill effect – enable if desired) */}
-            {false && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: INNOVUE_FILL.left,
-                  top: INNOVUE_FILL.top,
-                  width: INNOVUE_FILL.width,
-                  height: INNOVUE_FILL.height,
-                  borderRadius: INNOVUE_FILL.radius,
-                  background: INNOVUE_FILL.color,
-                  filter: `blur(${INNOVUE_FILL.blurPx})`,
-                  opacity: 0,
-                  animation: `${fillAnim} ${BEAM_FLASH.durationMs}ms ease-out 1`,
-                  pointerEvents: "none",
-                  zIndex: 9,
-                }}
-              />
-            )}
           </div>
         </div>
       </div>
