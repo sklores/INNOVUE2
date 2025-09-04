@@ -19,7 +19,7 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const PuffyCloud: React.FC<{
   xPct: number;          // left position in %
   yPx: number;           // top position in px
-  scale: number;         // 0.8..1.6 typical
+  scale: number;         // 0.9..1.5 typical
   hue: number;           // 0=day (blue-white), 1=night (cool-grey)
   driftSec: number;      // horizontal drift duration
   bobSec: number;        // vertical bob duration
@@ -109,62 +109,64 @@ const Weather: React.FC<Props> = ({
   const t = clamp01(intensity);
   if (condition === "clear") return null;
 
-  // Basic night tint: if you have a phase hook, wire it here instead of constant false
+  // If you have a real phase hook, wire it here; for now keep neutral hue.
   const isNight = false;
   const hue = isNight ? 1 : 0;
 
-  // --- Cloud placement logic ---
-  // Ensure we cover LEFT / MID / RIGHT at least once,
-  // then add extra clouds randomly as intensity grows.
-  const baseClouds = Math.min(3, 2 + Math.round(t * 2)); // 2..3
-  const extra = Math.max(0, Math.round(t * 1));          // +0..1
-  const total = baseClouds + extra;
+  // ---- Cloud count & placement rules ----
+  // Fewer clouds overall; always ensure a LEFT cloud (over lighthouse area).
+  const baseCount = 2;                  // keep it restrained
+  const extra     = t > 0.7 ? 1 : 0;    // at most one extra on high intensity
+  const total     = baseCount + extra;  // 2..3
+
+  // Placement helpers
+  const pick = (min: number, max: number) => min + Math.random() * (max - min);
+  const within = (x: number, min: number, max: number) => Math.max(min, Math.min(max, x));
+
+  // Regions (percent of scene width)
+  const LH_MIN = 4;    // lighthouse zone starts very left
+  const LH_MAX = 24;   //…and ends around a quarter of the scene
+  const MID_MIN = 22;  // mid can overlap a touch with the left zone for variety
+  const MID_MAX = 58;
+  const RIGHT_CAP = 72; // cap so clouds don't cluster near the moon (right side)
+
+  // Minimum horizontal distance between cloud centers (in %)
+  const MIN_DX = 14;
+
+  const makeCloud = (x: number) => ({
+    x,
+    y: 12 + Math.random() * 10,
+    sc: 1.0 + Math.random() * 0.45,    // 1.00..1.45 (a touch larger, fewer clouds)
+    drift: (24 + Math.random() * 10) * (reducedMotion ? 1.4 : 1),
+    bob:   (10 + Math.random() * 6)  * (reducedMotion ? 1.4 : 1),
+    delay: Math.random() * 6,
+  });
 
   const clouds = useMemo(() => {
-    const buckets = [
-      { min: 6,  max: 34 }, // LEFT
-      { min: 35, max: 65 }, // MID
-      { min: 55, max: 90 }, // RIGHT
-    ];
-    const pick = (min: number, max: number) => min + Math.random() * (max - min);
-
     const arr: { x: number; y: number; sc: number; drift: number; bob: number; delay: number }[] = [];
 
-    // Seed left/mid/right at least once if we have >=3 clouds
-    if (total >= 3) {
-      buckets.forEach(({ min, max }) => {
-        arr.push({
-          x: pick(min, max),
-          y: 12 + Math.random() * 10,
-          sc: 0.95 + Math.random() * 0.5,
-          drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
-          bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
-          delay: Math.random() * 6,
-        });
-      });
-    } else {
-      // With fewer clouds, still allow left placement
-      arr.push({
-        x: pick(8, 60),
-        y: 12 + Math.random() * 10,
-        sc: 0.95 + Math.random() * 0.5,
-        drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
-        bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
-        delay: Math.random() * 6,
-      });
+    // 1) Force a lighthouse cloud on the far LEFT
+    let xLH = pick(LH_MIN, LH_MAX);
+    arr.push(makeCloud(xLH));
+
+    // 2) Add remaining clouds with a left-heavy bias and spacing constraint
+    const targets = [
+      pick(MID_MIN, MID_MAX),          // one for middle
+      pick(36, RIGHT_CAP),             // optional right-ish, but capped far from moon
+    ];
+
+    for (let i = 0; i < total - 1; i++) {
+      let candidate = targets[i] ?? pick(LH_MIN, RIGHT_CAP);
+      // enforce spacing: if too close to an existing cloud, nudge left first, then mid
+      for (let tries = 0; tries < 8; tries++) {
+        const tooClose = arr.some(c => Math.abs(c.x - candidate) < MIN_DX);
+        if (!tooClose) break;
+        // Prefer nudge to the left; clamp within bounds
+        candidate = within(candidate - (4 + Math.random() * 6), LH_MIN, RIGHT_CAP);
+      }
+      arr.push(makeCloud(candidate));
     }
 
-    // Add any extras randomly across the full span
-    for (let i = arr.length; i < total; i++) {
-      arr.push({
-        x: pick(6, 90),
-        y: 12 + Math.random() * 10,
-        sc: 0.95 + Math.random() * 0.5,
-        drift: (22 + Math.random() * 8) * (reducedMotion ? 1.4 : 1),
-        bob:   (10 + Math.random() * 6) * (reducedMotion ? 1.4 : 1),
-        delay: Math.random() * 6,
-      });
-    }
     return arr;
   }, [total, reducedMotion]);
 
@@ -191,7 +193,7 @@ const Weather: React.FC<Props> = ({
       {/* RAIN (streaks) */}
       {(condition === "rain" || condition === "thunder") && (
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", opacity: 0.9 }}>
-          {Array.from({ length: 26 + Math.round(24 * t) }).map((_, i) => {
+          {Array.from({ length: 22 + Math.round(18 * t) }).map((_, i) => {
             const left = Math.random() * 100;
             const delay = Math.random() * 2;
             const speed = (1.2 - t * 0.4) * (reducedMotion ? 1.4 : 1);
