@@ -9,7 +9,94 @@ type Props = {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-/** One animated flock flying left->right as a set of small birds. */
+/** One bird composed of 3 strokes: LEFT wing, BODY, RIGHT wing.
+ *  Wings flap around the BODY as the pivot (no visible gap).
+ */
+const BirdMark: React.FC<{
+  size: number;           // base size in px
+  color: string;
+  flapSeconds: number;    // flap period
+  flapDelay: number;      // phase offset
+  tiltDeg: number;        // base tilt of the whole bird
+}> = ({ size, color, flapSeconds, flapDelay, tiltDeg }) => {
+  const bodyLen = Math.max(6, Math.round(size * 0.9));   // body stroke length
+  const wingLen = Math.max(8, Math.round(size * 1.2));   // each wing stroke
+  const stroke = 2;
+
+  // Keyframe name unique per instance to avoid collisions
+  const anim = useMemo(() => `wingflap_${Math.random().toString(36).slice(2)}`, []);
+
+  const commonWing: React.CSSProperties = {
+    position: "absolute",
+    top: 0,
+    height: 0,
+    borderTop: `${stroke}px solid ${color}`,
+    transformOrigin: "left center",
+    willChange: "transform",
+  };
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: wingLen * 2,
+        height: size,
+        transform: `rotate(${tiltDeg}deg)`,
+      }}
+    >
+      {/* BODY (center short stroke) */}
+      <span
+        style={{
+          position: "absolute",
+          top: size * 0.4,
+          left: wingLen - bodyLen / 2,
+          width: bodyLen,
+          height: 0,
+          borderTop: `${stroke}px solid ${color}`,
+          opacity: 0.95,
+        }}
+      />
+
+      {/* LEFT WING (flaps up/down around body's left end) */}
+      <span
+        style={{
+          ...commonWing,
+          left: wingLen - bodyLen / 2,
+          top: size * 0.4,
+          width: wingLen,
+          animation: `${anim}_L ${flapSeconds}s ease-in-out ${flapDelay}s infinite`,
+        }}
+      />
+
+      {/* RIGHT WING (mirrored, pivots around body's right end) */}
+      <span
+        style={{
+          ...commonWing,
+          left: wingLen + bodyLen / 2,
+          top: size * 0.4,
+          width: wingLen,
+          transformOrigin: "right center",
+          animation: `${anim}_R ${flapSeconds}s ease-in-out ${flapDelay + 0.04}s infinite`,
+        }}
+      />
+
+      <style>{`
+        @keyframes ${anim}_L {
+          0%   { transform: rotate(18deg) }
+          50%  { transform: rotate(30deg) }  /* gentle amplitude */
+          100% { transform: rotate(18deg) }
+        }
+        @keyframes ${anim}_R {
+          0%   { transform: rotate(-18deg) }
+          50%  { transform: rotate(-30deg) }
+          100% { transform: rotate(-18deg) }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+/** A flock flying left->right as a set of small BirdMarks. */
 const Flock: React.FC<{
   topPct: number;          // vertical placement (0..100%) of the scene
   size: number;            // base bird size in px
@@ -23,14 +110,14 @@ const Flock: React.FC<{
   const birds = Array.from({ length: count }).map((_, i) => {
     const offset = (i / Math.max(1, count - 1)) * spread;
     const yJitter = (Math.sin(i) * size) / 3;
-    const tilt = -12 + (i % 3) * 6; // subtle variation
-    const flap = 0.7 + (i % 4) * 0.06; // 0.7..0.88s wing speed variation
-    const phase = (i % 5) * 0.08;      // desync a little
+    const tilt = -10 + (i % 3) * 5;                 // subtle variation
+    const flap = reducedMotion ? 1.1 : 0.85 + (i % 4) * 0.06; // compact, natural speed
+    const phase = (i % 5) * 0.08;
     return { offset, yJitter, tilt, flap, phase };
   });
 
   const animName = useMemo(
-    () => `birds-fly-${Math.random().toString(36).slice(2)}`,
+    () => `flockfly_${Math.random().toString(36).slice(2)}`,
     []
   );
 
@@ -38,10 +125,10 @@ const Flock: React.FC<{
     <div
       style={{
         position: "absolute",
-        left: -120,
+        left: -140,
         top: `${topPct}%`,
         height: size * 3,
-        width: spread + 300,
+        width: spread + 360,
         pointerEvents: "none",
         animation: `${animName} ${duration}s linear ${delay}s infinite`,
         willChange: "transform",
@@ -55,53 +142,15 @@ const Flock: React.FC<{
             position: "absolute",
             left: b.offset,
             top: b.yJitter,
-            width: size * 2,
-            height: size,
-            transform: `rotate(${b.tilt}deg)`,
           }}
         >
-          {/* bird body anchor (invisible; just for transform origins) */}
-          <div
-            style={{
-              position: "relative",
-              width: size * 2,
-              height: size,
-            }}
-          >
-            {/* LEFT wing */}
-            <span
-              style={{
-                position: "absolute",
-                left: 0,
-                top: size * 0.4,
-                width: size,
-                height: 0,
-                borderTop: `2px solid ${color}`,
-                transformOrigin: "left center",
-                // base V angle + flap oscillation
-                animation: reducedMotion
-                  ? undefined
-                  : `wingL-flap ${b.flap}s ease-in-out ${b.phase}s infinite`,
-                opacity: 0.9,
-              }}
-            />
-            {/* RIGHT wing */}
-            <span
-              style={{
-                position: "absolute",
-                left: size,
-                top: size * 0.4,
-                width: size,
-                height: 0,
-                borderTop: `2px solid ${color}`,
-                transformOrigin: "right center",
-                animation: reducedMotion
-                  ? undefined
-                  : `wingR-flap ${b.flap}s ease-in-out ${b.phase + 0.04}s infinite`,
-                opacity: 0.9,
-              }}
-            />
-          </div>
+          <BirdMark
+            size={size}
+            color={color}
+            flapSeconds={b.flap}
+            flapDelay={b.phase}
+            tiltDeg={b.tilt}
+          />
         </div>
       ))}
 
@@ -109,18 +158,6 @@ const Flock: React.FC<{
         @keyframes ${animName} {
           0%   { transform: translateX(0) }
           100% { transform: translateX(110%) }
-        }
-
-        /* Wings flap around their base angle (±12–14deg range) */
-        @keyframes wingL-flap {
-          0%   { transform: rotate(18deg) }
-          50%  { transform: rotate(32deg) }  /* upstroke */
-          100% { transform: rotate(18deg) }
-        }
-        @keyframes wingR-flap {
-          0%   { transform: rotate(-18deg) }
-          50%  { transform: rotate(-32deg) } /* upstroke */
-          100% { transform: rotate(-18deg) }
         }
       `}</style>
     </div>
@@ -136,15 +173,14 @@ const Birds: React.FC<Props> = ({ sceneWidth, activity = 0.4, reducedMotion }) =
 
   const groups = useMemo(() => {
     return Array.from({ length: flocks }).map((_, i) => {
-      const topPct = 18 + i * (26 / Math.max(1, flocks - 1)) + Math.random() * 6;
+      const topPct = 20 + i * (24 / Math.max(1, flocks - 1)) + Math.random() * 6;
       const size = sizeBase + (i % 2);
-      const count = 3 + Math.round(2 + t * 3);     // 5..8-ish
-      const duration = durBase + i * 1.5 - t * 2;  // slightly different speeds
+      const count = 4 + Math.round(1 + t * 2);     // 5..7 birds/flock
+      const duration = durBase + i * 1.6 - t * 2;  // slightly different speeds
       const delay = -Math.random() * duration;
-      const spread = spreadBase - i * 30 + Math.random() * 20;
+      const spread = spreadBase - i * 28 + Math.random() * 18;
       return { topPct, size, count, duration, delay, spread };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flocks, sizeBase, spreadBase, durBase, t]);
 
   const strokeColor = "rgba(40, 60, 80, 0.95)";
