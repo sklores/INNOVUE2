@@ -1,165 +1,136 @@
 // src/features/marquee/Marquee.tsx
-import { useEffect, useMemo, useState } from "react";
-import { fetchSheetValues } from "../data/sheets/fetch";
-import { sheetMap } from "../../config/sheetMap";
+import React from "react";
 
-type Filters = {
-  news: boolean;
-  reviews: boolean;
-  social: boolean;
-  bank: boolean;
-  questions: boolean;
-};
+/**
+ * Palette-aligned marquee.
+ * - Outer card matches bottom bar grey (#dde2ea) with 1px outline
+ * - Message pill matches the front wave color (rgba(120,200,255,0.55))
+ * - Edge fades hint horizontal scroll
+ * - Minimal, restrained "Live" dot at the start
+ */
+const Marquee: React.FC = () => {
+  // Replace this with your feed string; you can wire it later
+  const message =
+    "Happy Grilled Cheese Day! — New menu drop this week — Follow us on Instagram @GCDC — Delivery now live — Order direct and save — Meetup Tonight 7pm — ";
 
-export default function Marquee() {
-  const [rows, setRows] = useState<string[][]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>({
-    news: true,
-    reviews: true,
-    social: true,
-    bank: true,
-    questions: true,
-  });
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const r = await fetchSheetValues();
-        setRows(r);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const parts = useMemo(() => {
-    const safe = (i: number) => String(rows?.[i]?.[1] ?? "").trim();
-    return {
-      news: safe(sheetMap.marquee.news),
-      reviews: safe(sheetMap.marquee.reviews),
-      social: safe(sheetMap.marquee.social),
-      bank: safe(sheetMap.marquee.banking),
-      questions: safe(sheetMap.marquee.questions),
-    };
-  }, [rows]);
-
-  const text = useMemo(() => {
-    const ordered: Array<keyof Filters> = ["news", "reviews", "social", "bank", "questions"];
-    const on = ordered.filter((k) => filters[k]).map((k) => parts[k]).filter(Boolean);
-    return on.join("  —  ");
-  }, [parts, filters]);
-
-  const toggle = (k: keyof Filters) => setFilters((s) => ({ ...s, [k]: !s[k] }));
-
-  // styles that mirror your KPI cards (shell + inner banner)
-  const shell: React.CSSProperties = {
-    background: "#fff",
-    color: "#2A2C34",
-    border: "1px solid #E1E2E6",
-    borderRadius: 16,
-    padding: 14,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
-    marginTop: 12,
+  const styles = {
+    card: {
+      border: "1px solid #E1E2E6",
+      borderRadius: 12,
+      background: "#dde2ea",
+      boxShadow: "0 10px 22px rgba(0,0,0,0.08)",
+      padding: 10,
+      overflow: "hidden" as const,
+      position: "relative" as const,
+    },
+    trackWrap: {
+      position: "relative" as const,
+      overflowX: "auto" as const,
+      overflowY: "hidden" as const,
+      scrollbarWidth: "none" as const, // Firefox
+      msOverflowStyle: "none" as const, // IE/Edge
+    },
+    // Hide scrollbars in webkit
+    noScroll: {
+      WebkitOverflowScrolling: "touch" as const,
+    },
+    track: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 16,
+      whiteSpace: "nowrap" as const,
+      padding: "0 8px",
+    },
+    pill: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 10,
+      height: 32,
+      padding: "0 12px",
+      border: "1px solid #E1E2E6",
+      borderRadius: 10,
+      background: "rgba(120,200,255,0.55)", // same as front wave color
+      color: "#0f172a",
+      fontWeight: 700,
+      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+    },
+    liveDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 999,
+      background: "#22c55e",
+      boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
+    },
+    msg: { letterSpacing: 0.2 },
+    // Left/right fade masks to hint scroll
+    fadeLeft: {
+      position: "absolute" as const,
+      top: 0,
+      bottom: 0,
+      left: 0,
+      width: 24,
+      pointerEvents: "none" as const,
+      background: "linear-gradient(90deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
+    },
+    fadeRight: {
+      position: "absolute" as const,
+      top: 0,
+      bottom: 0,
+      right: 0,
+      width: 24,
+      pointerEvents: "none" as const,
+      background: "linear-gradient(270deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
+    },
+    // Filter tags row (kept minimal)
+    chipsRow: {
+      marginTop: 8,
+      display: "flex",
+      flexWrap: "wrap" as const,
+      gap: 8,
+    },
+    chip: {
+      height: 28,
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "0 10px",
+      border: "1px solid #E1E2E6",
+      borderRadius: 999,
+      background: "#FFFFFF",
+      color: "#334155",
+      fontWeight: 600,
+      fontSize: 12,
+    },
   };
-  const labelStyle: React.CSSProperties = { fontWeight: 800, fontSize: 16, marginBottom: 10 };
 
   return (
-    <section style={{ padding: 12 }}>
-      {/* tile shell */}
-      <div style={shell}>
-        <div style={labelStyle}>Live Feed</div>
-
-        {/* scrolling banner */}
-        <Ticker text={text || (loading ? "Loading…" : " ")} />
-
-        {/* filter chips */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-          <Chip active={filters.news} onClick={() => toggle("news")}  >news</Chip>
-          <Chip active={filters.reviews} onClick={() => toggle("reviews")}>reviews</Chip>
-          <Chip active={filters.social} onClick={() => toggle("social")}>social</Chip>
-          <Chip active={filters.bank} onClick={() => toggle("bank")}>bank</Chip>
-          <Chip active={filters.questions} onClick={() => toggle("questions")}>events</Chip>
+    <section style={styles.card}>
+      <div style={{ ...styles.trackWrap, ...styles.noScroll } as React.CSSProperties}>
+        <div style={styles.track}>
+          <span style={styles.pill as React.CSSProperties}>
+            <span style={styles.liveDot} />
+            <span style={styles.msg}>Live Feed</span>
+          </span>
+          {/* message content in a long pill */}
+          <span style={styles.pill as React.CSSProperties}>
+            <span style={styles.msg}>{message.repeat(2)}</span>
+          </span>
         </div>
+
+        {/* edge fades */}
+        <div style={styles.fadeLeft} />
+        <div style={styles.fadeRight} />
+      </div>
+
+      {/* (optional) small chips; keep minimal to avoid clutter */}
+      <div style={styles.chipsRow as React.CSSProperties}>
+        <span style={styles.chip as React.CSSProperties}>news</span>
+        <span style={styles.chip as React.CSSProperties}>reviews</span>
+        <span style={styles.chip as React.CSSProperties}>social</span>
+        <span style={styles.chip as React.CSSProperties}>bank</span>
+        <span style={styles.chip as React.CSSProperties}>events</span>
       </div>
     </section>
   );
-}
+};
 
-/* ----------- sub-components ----------- */
-
-function Ticker({ text }: { text: string }) {
-  // purple gradient banner styled like a KPI inner bar, but full-width scrolling
-  const bar: React.CSSProperties = {
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "linear-gradient(180deg, #b99cf7, #8d79e6)",
-    color: "#0b2540",
-    minHeight: 44,
-    display: "flex",
-    alignItems: "center",
-    overflow: "hidden",
-    position: "relative",
-    padding: "0 12px",
-  };
-
-  const track: React.CSSProperties = {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    whiteSpace: "nowrap",
-    // we’ll animate translateX on the inner span
-  };
-
-  const span: React.CSSProperties = {
-    display: "inline-block",
-    paddingRight: 40, // gap before repeat
-    animation: "innovue-marquee 18s linear infinite",
-  };
-
-  return (
-    <div style={bar}>
-      {/* keyframes (scoped) */}
-      <style>{`
-        @keyframes innovue-marquee {
-          0%   { transform: translateX(0%) }
-          100% { transform: translateX(-100%) }
-        }
-      `}</style>
-      <div style={track} aria-label={`Marquee: ${text}`} title={text}>
-        <span style={span}>{text || " "}</span>
-        {/* duplicate for seamless loop */}
-        <span style={span}>{text || " "}</span>
-      </div>
-    </div>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "8px 12px",
-        borderRadius: 12,
-        fontWeight: 800,
-        fontSize: 14,
-        color: active ? "#0b2540" : "#787D85",
-        background: active ? "#E1E2F9" : "transparent",
-        border: active ? "1px solid #C9CDF0" : "1px solid #E1E2E6",
-        userSelect: "none",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+export default Marquee;
