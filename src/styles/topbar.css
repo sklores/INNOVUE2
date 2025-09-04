@@ -56,8 +56,8 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 2px;   /* ↑ lift the waterline so it never looks clipped */
-    height: 48px;
+    bottom: 0px;   /* ↑ lift the waterline so it never looks clipped */
+    height: 55px;
     overflow: hidden;
     pointer-events: none;
   }
