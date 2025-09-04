@@ -12,6 +12,13 @@ type Variant = "back" | "front";
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
+/**
+ * Controls how high the waterline rises at salesRatio = 1.0 (in pixels).
+ * Increase to raise the final water level; decrease to lower it.
+ * This is a delta relative to the low-sales baseline inside the band.
+ */
+const LIGHTHOUSE_BASE_OFFSET = 46;
+
 /** Build a wave path sized to the *band height* (not the full scene). */
 function buildWavePath(
   totalWidth: number,
@@ -28,6 +35,7 @@ function buildWavePath(
   d += ` S ${seg * 1.5} ${yBase + amplitudePx}, ${seg * 2} ${yBase}`;
   d += ` S ${seg * 2.5} ${yBase + amplitudePx}, ${seg * 3} ${yBase}`;
   d += ` S ${seg * 3.5} ${yBase + amplitudePx}, ${seg * 4} ${yBase}`;
+  // Close down to the band bottom so there is NEVER a gap
   d += ` L ${totalWidth} ${bandHeight} L 0 ${bandHeight} Z`;
   return d;
 }
@@ -42,13 +50,11 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   const sceneW = sceneSize.width;
   const r = clamp01(salesRatio);
 
-  // --- Band height: expand at high sales so crests can rise over the rock ---
-  // 48px normally; up to 64px when sales high.
-  const bandH = Math.round(48 + r * 16); // 48..64
-
+  // Band height — we keep it at 64 for generous vertical room
+  const bandH = 64;
   const scrollW = sceneW * 2; // 2x width so it can scroll
 
-  // --- amplitude mapping (storm surge at r=1) ---
+  // --- amplitude mapping (same feel you liked) ---
   // Baseline at r=0 (very low red)
   const baseBackLow = 3;    // px
   const baseFrontLow = 4;   // px
@@ -56,15 +62,31 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   const targetBack = 22;    // px
   const targetFront = 28;   // px
 
-  // Ease amplitude toward target
-  const ease = (a: number, b: number, t: number) => a + (b - a) * t;
-  const ampBack = Math.round(ease(baseBackLow, targetBack, r));
-  const ampFront = Math.round(ease(baseFrontLow, targetFront, r));
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  const ampBack = Math.round(lerp(baseBackLow, targetBack, r));
+  const ampFront = Math.round(lerp(baseFrontLow, targetFront, r));
 
-  // --- Baseline height: raise waterline as sales increase ---
-  // yFromBottom (within band): lower number = closer to bottom, higher = baseline up
-  const baseBackY = Math.round(20 - r * 6);   // 20→14
-  const baseFrontY = Math.round(10 - r * 4);  // 10→6
+  // --- baseline height inside the band ---
+  // Low-sales baselines (yFromBottom): higher value -> lower baseline (further from top)
+  const baseBackYLow = 20;
+  const baseFrontYLow = 10;
+
+  // We raise the waterline smoothly with sales.
+  // Convert the LIGHTHOUSE_BASE_OFFSET (px) into a delta in "yFromBottom" units.
+  // Since the band is in pixels, we can subtract a delta directly (raising the baseline).
+  const deltaY = Math.min(LIGHTHOUSE_BASE_OFFSET, bandH - 4); // safety clamp
+
+  // Slight parallax offset so back layer sits a touch lower
+  const parallaxBack = 4; // px
+
+  const yFromBottomBack = Math.max(
+    0,
+    Math.round(baseBackYLow - r * (deltaY) + parallaxBack)
+  );
+  const yFromBottomFront = Math.max(
+    0,
+    Math.round(baseFrontYLow - r * (deltaY))
+  );
 
   // --- speed: a touch faster with high sales (still calm) ---
   const durBack = Math.max(8, (reducedMotion ? 18 : 16) - r * 5);
@@ -73,7 +95,7 @@ const WavesLayer: React.FC<CommonProps & { variant: Variant }> = ({
   const isBack = variant === "back";
   const amp = isBack ? ampBack : ampFront;
   const dur = isBack ? durBack : durFront;
-  const yFromBottom = isBack ? baseBackY : baseFrontY;
+  const yFromBottom = isBack ? yFromBottomBack : yFromBottomFront;
 
   const fill = isBack
     ? "rgba(180, 220, 255, 0.35)"
