@@ -1,15 +1,5 @@
 // src/features/marquee/Marquee.tsx
-import React, { useMemo, useRef, useState } from "react";
-
-/**
- * Innovue Live Feed Widget
- * - Big polished card that aggregates "real-time" items from Social, Reviews, Bank, News
- * - Palette matched: outer bg #dde2ea, outline #E1E2E6, pills reuse your UI language
- * - Live Ticker (auto-scroll, pause on hover/touch), fully clickable
- * - Centered filters, compact metric badges for quick at-a-glance
- *
- * You can later replace the mock data with real feeds.
- */
+import React, { useMemo, useState } from "react";
 
 type SourceKey = "social" | "reviews" | "bank" | "news";
 
@@ -20,73 +10,72 @@ const SOURCES: { key: SourceKey; label: string }[] = [
   { key: "news",    label: "News"    },
 ];
 
-// Mock feed items (replace with real data later)
+// Mock feed items (replace with live data later)
 const MOCK_FEED: Record<SourceKey, string[]> = {
   social: [
     "IG: Happy Grilled Cheese Day! 🧀🔥",
     "X: New menu drop this week — tell us your favorite!",
-    "TikTok: Behind-the-scenes: our perfect melt technique.",
+    "TikTok: Melt cam — that sizzle 🔥",
   ],
   reviews: [
     "Google ★★★★☆ — “Best grilled cheese in DC.”",
-    "Yelp ★★★★★ — “Warm staff, crispy edges, gooey center.”",
+    "Yelp ★★★★★ — “Crispy edges, gooey center.”",
   ],
   bank: [
-    "Stripe: $1,240 Settled",
-    "Bank: Daily deposits processed",
+    "Stripe: Settled $1,240",
+    "Bank: Payout scheduled Fri",
   ],
   news: [
-    "Local: Food Truck Fest this weekend — we’ll be there!",
-    "Industry: Cheese prices stable; artisan makers up 3%",
+    "Local: Food Truck Fest — we’ll be there!",
+    "Industry: Artisan cheese makers up 3%",
   ],
 };
 
-// Recent “metrics” badges (placeholder)
 const METRICS = [
-  { label: "Mentions", val: 27 },
-  { label: "New Reviews", val: 5 },
-  { label: "Bank +$ Today", val: "$1.2k" },
-  { label: "Links Clicked", val: 92 },
+  { label: "Mentions", val: 27, color: "#60a5fa" },
+  { label: "New Reviews", val: 5, color: "#60a5fa" },
+  { label: "Links Clicked", val: 92, color: "#22c55e" }, // replaced Bank Today
 ];
 
 const Marquee: React.FC = () => {
   const [active, setActive] = useState<SourceKey>("social");
-  const feed = MOCK_FEED[active];
+  const feed = MOCK_FEED[active] ?? [];
 
-  // Flatten the feed into a single ticker string
-  const ticker = useMemo(() => (feed?.length ? feed.join("  •  ") : ""), [feed]);
+  // Flatten feed into a single long ticker string
+  const ticker = useMemo(() => (feed.length ? feed.join("  •  ") : ""), [feed]);
 
-  // pause on hover/touch
   const [paused, setPaused] = useState(false);
   const onEnter = () => setPaused(true);
   const onLeave = () => setPaused(false);
 
+  // Styles
   const styles = {
-    // ——— Card ———
+    // Outer widget: white bg + 1px border to match tiles; feels like a standalone module
     card: {
       border: "1px solid #E1E2E6",
-      borderRadius: 16, // a bit larger than regular to feel “widgety”
-      background: "#dde2ea",
+      borderRadius: 16,
+      background: "#FFFFFF",
       boxShadow: "0 10px 22px rgba(0,0,0,0.08)",
-      padding: 14, // more air than the old version
+      padding: 14,
       marginTop: 12,
       position: "relative" as const,
       overflow: "hidden" as const,
-      pointerEvents: "auto" as const, // ensure clickable
+      pointerEvents: "auto" as const,
     },
 
-    // ——— Title row ———
+    // Title row
     titleRow: {
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: "1fr auto",
       alignItems: "center",
-      justifyContent: "space-between",
       gap: 12,
       marginBottom: 12,
     },
-    titleLeft: {
+    leftTitle: {
       display: "flex",
       alignItems: "center",
       gap: 10,
+      flexWrap: "wrap" as const,
     },
     liveDot: {
       width: 8,
@@ -115,40 +104,65 @@ const Marquee: React.FC = () => {
       cursor: "pointer",
     }),
 
-    // ——— Ticker ———
+    // Right side: small brand mark
+    rightBrand: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+    },
+    brandWrap: {
+      width: 28,
+      height: 28,
+      borderRadius: 999,
+      background: "#FFFFFF",
+      border: "1px solid #E1E2E6",
+      display: "grid",
+      placeItems: "center",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+    },
+    brandImg: { width: 18, height: 18, objectFit: "contain" as const },
+
+    // Ticker container with inner band color equal to bottom bar grey
+    band: {
+      border: "1px solid #E1E2E6",
+      borderRadius: 12,
+      background: "#dde2ea", // same as bottom bar
+      padding: 10,
+      position: "relative" as const,
+      overflow: "hidden" as const,
+    },
     tickerWrap: {
       position: "relative" as const,
       overflow: "hidden" as const,
-      border: "1px solid #E1E2E6",
-      borderRadius: 12,
-      background: "rgba(120,200,255,0.55)", // front-wave color
-      padding: "8px 12px",
     },
-    tickerTrack: (paused: boolean) => ({
+    tickerPill: {
       display: "inline-block",
       whiteSpace: "nowrap" as const,
       minWidth: "100%",
-      animation: `marquee 18s linear infinite`,
-      animationPlayState: paused ? "paused" : ("running" as const),
-      pointerEvents: "auto" as const,
+      border: "1px solid #E1E2E6",
+      borderRadius: 10,
+      background: "rgba(120,200,255,0.55)", // front-wave color
       color: "#0b2540",
       fontWeight: 700,
       letterSpacing: 0.2,
-    }),
+      padding: "8px 12px",
+      animation: `marquee 18s linear infinite`,
+      animationPlayState: paused ? "paused" : ("running" as const),
+    },
     fadeLeft: {
       position: "absolute" as const,
       top: 0, bottom: 0, left: 0, width: 24,
       pointerEvents: "none" as const,
-      background: "linear-gradient(90deg, rgba(120,200,255,0.55) 50%, rgba(120,200,255,0) 100%)",
+      background: "linear-gradient(90deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
     },
     fadeRight: {
       position: "absolute" as const,
       top: 0, bottom: 0, right: 0, width: 24,
       pointerEvents: "none" as const,
-      background: "linear-gradient(270deg, rgba(120,200,255,0.55) 50%, rgba(120,200,255,0) 100%)",
+      background: "linear-gradient(270deg, #dde2ea 50%, rgba(221,226,234,0) 100%)",
     },
 
-    // ——— Metrics row ———
+    // Metrics row (centered)
     metricsRow: {
       marginTop: 10,
       display: "flex",
@@ -157,7 +171,7 @@ const Marquee: React.FC = () => {
       gap: 8,
       flexWrap: "wrap" as const,
     },
-    metric: {
+    metric: (bg: string) => ({
       height: 28,
       display: "inline-flex",
       alignItems: "center",
@@ -170,103 +184,76 @@ const Marquee: React.FC = () => {
       fontWeight: 700,
       fontSize: 12,
       boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-    },
-
-    // ——— Filter chips (centered under ticker) ———
-    chipsRow: {
-      marginTop: 8,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center" as const,
-      gap: 8,
-      flexWrap: "wrap" as const,
-    },
-    chip: {
-      height: 28,
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "0 10px",
-      border: "1px solid #E1E2E6",
-      borderRadius: 999,
-      background: "#FFFFFF",
-      color: "#334155",
-      fontWeight: 600,
-      fontSize: 12,
-    },
+    }),
+    metricDot: (color: string) => ({
+      width: 6, height: 6, borderRadius: 999,
+      background: color,
+      boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
+    }),
   };
 
   return (
     <section style={styles.card}>
-
-      {/* Title + tabs */}
+      {/* Header */}
       <div style={styles.titleRow as React.CSSProperties}>
-        <div style={styles.titleLeft as React.CSSProperties}>
+        <div style={styles.leftTitle as React.CSSProperties}>
           <span style={styles.liveDot} />
           <span style={styles.titleText}>Live Feed</span>
+          <div style={styles.tabs as React.CSSProperties}>
+            {SOURCES.map(s => (
+              <button
+                key={s.key}
+                onClick={() => setActive(s.key)}
+                style={styles.tab(active === s.key) as React.CSSProperties}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={styles.tabs as React.CSSProperties}>
-          {SOURCES.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setActive(s.key)}
-              style={styles.tab(active === s.key) as React.CSSProperties}
-            >
-              {s.label}
-            </button>
-          ))}
+
+        {/* Brand mark */}
+        <div style={styles.rightBrand as React.CSSProperties}>
+          <div style={styles.brandWrap as React.CSSProperties}>
+            <img src="/logos/gcdclogo.png" alt="GCDC" style={styles.brandImg as React.CSSProperties} />
+          </div>
         </div>
       </div>
 
-      {/* Ticker (auto-scroll; pause on hover/touch) */}
+      {/* Ticker band */}
       <div
-        style={styles.tickerWrap as React.CSSProperties}
+        style={styles.band as React.CSSProperties}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
         onTouchStart={onEnter}
         onTouchEnd={onLeave}
       >
-        <div style={styles.tickerTrack(paused) as React.CSSProperties}>
-          {/* duplicate the track so it loops seamlessly */}
-          <span>{ticker} </span>
-          <span aria-hidden>{ticker}</span>
+        <div style={styles.tickerWrap as React.CSSProperties}>
+          <span style={styles.tickerPill as React.CSSProperties}>
+            {/* duplicate content to loop seamlessly */}
+            {ticker} &nbsp;&nbsp; {ticker}
+          </span>
+          <div style={styles.fadeLeft} />
+          <div style={styles.fadeRight} />
         </div>
-
-        {/* edge fades */}
-        <div style={styles.fadeLeft} />
-        <div style={styles.fadeRight} />
       </div>
 
-      {/* Quick metrics */}
+      {/* Metrics */}
       <div style={styles.metricsRow as React.CSSProperties}>
         {METRICS.map((m, i) => (
-          <span key={i} style={styles.metric as React.CSSProperties}>
-            <span style={{
-              width: 6, height: 6, borderRadius: 999,
-              background: i === 2 ? "#22c55e" : "#60a5fa",
-              boxShadow: "0 0 0 2px rgba(0,0,0,0.04)"
-            }} />
+          <span key={i} style={styles.metric(m.color) as React.CSSProperties}>
+            <span style={styles.metricDot(m.color)} />
             {m.label}: {m.val}
           </span>
         ))}
       </div>
 
-      {/* Filter chips (centered) */}
-      <div style={styles.chipsRow as React.CSSProperties}>
-        <span style={styles.chip as React.CSSProperties}>news</span>
-        <span style={styles.chip as React.CSSProperties}>reviews</span>
-        <span style={styles.chip as React.CSSProperties}>social</span>
-        <span style={styles.chip as React.CSSProperties}>bank</span>
-        <span style={styles.chip as React.CSSProperties}>events</span>
-      </div>
-
-      {/* keyframes for the marquee */}
+      {/* keyframes */}
       <style>{`
         @keyframes marquee {
           0%   { transform: translateX(0) }
           100% { transform: translateX(-50%) }
         }
-        /* Hide scrollbars in webkit for trackWrap */
-        section::-webkit-scrollbar { display: none; }
       `}</style>
     </section>
   );
