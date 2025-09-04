@@ -2,7 +2,7 @@
 
 export const TOPBAR = {
   width: 360,
-  height: 260,  // taller scenic frame so waves & sky fully fit
+  height: 260,  // scenic height so waves + sky fully fit
   radius: 12,
 };
 
@@ -53,29 +53,21 @@ export const BADGE = {
   centerOffsetX: 0,
 };
 
-// ===== Frame (slightly larger side/top borders) =====
+// ===== Unified Frame (match KPI tiles) =====
+// We'll render a single 1px border in CSS to match the tile border.
 export const FRAME = {
-  strokeColor: "#E6EBF3",
+  strokeColor: "#E1E2E6",   // match KPI card border
   strokeWidth: 1,
   outerRadius: 16,
-  innerRadius: 12,
-
-  mat1: {
-    min: 6,  // outer mat thickness
-    max: 8,
-    vw: "1.6vw",
-    color: "#E6E9F0",  // blends with page background
-  },
-
-  mat2: {
-    min: 4,  // inner mat thickness
-    max: 6,
-    vw: "1.2vw",
-    color: "#FFFFFF",  // crisp white edge
-  },
-
+  innerRadius: 12,          // keep scene corner softness
   shadow: "0 10px 22px rgba(0,0,0,0.08)",
   sceneInsetShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+
+  // Tiny internal padding to keep a premium edge without a second mat.
+  // We'll implement as padding on .topbar-frame-outer in CSS.
+  padOuterPx: 8,            // small side/top padding
+  padInnerPx: 6,            // tiny inner padding
+  bottomBufferPx: 6,        // visual space above the waterline
 };
 
 // ===== Birds =====

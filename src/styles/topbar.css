@@ -1,33 +1,45 @@
 /* =========================
-   Scenic Top Bar — Frame
+   Scenic Top Bar — Unified Frame (match KPI tiles)
    ========================= */
    .topbar-frame-outer {
     width: 100%;
     display: block;
     box-sizing: border-box;
-    border-radius: var(--frame-outer-radius, 16px);
-    border: var(--frame-stroke-width, 1px) solid var(--frame-stroke, #E6EBF3);
-    background: var(--mat1-color, #E6E9F0);
-    box-shadow: var(--frame-shadow, 0 10px 22px rgba(0,0,0,0.08));
-    padding: clamp(var(--mat1-min, 6px), var(--mat1-vw, 1.6vw), var(--mat1-max, 8px));
+  
+    /* Single border to match tiles */
+    border: 1px solid #E1E2E6;
+    border-radius: 16px;
+  
+    /* Tiny internal padding for a premium edge */
+    padding: 8px;  /* side/top ~8px */
+  
+    background: #FFFFFF; /* keep card white like tiles */
+    box-shadow: 0 10px 22px rgba(0,0,0,0.08);
     position: relative;
   }
   
+  /* Inner wrapper — gives the scene a small extra safety margin */
   .topbar-frame-mat2 {
-    border-radius: calc(var(--frame-outer-radius, 16px) - 2px);
-    background: var(--mat2-color, #FFFFFF);
+    border-radius: 14px;     /* slightly less than outer to keep edge clean */
+    background: #FFFFFF;
     overflow: hidden;
-    padding: clamp(var(--mat2-min, 4px), var(--mat2-vw, 1.2vw), var(--mat2-max, 6px));
+  
+    padding: 6px;            /* tiny inner padding for a crisp edge */
     position: relative;
   }
   
-  /* Scene core */
+  /* =========================
+     Scene core (with bottom buffer)
+     ========================= */
   .topbar-scene {
     position: relative;
     overflow: hidden;
-    border-radius: var(--frame-inner-radius, 12px);
+    border-radius: 12px;
     background: linear-gradient(#cfe9ff, #eaf6ff);
-    box-shadow: var(--scene-inset-shadow, inset 0 1px 0 rgba(255,255,255,.6));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+  
+    /* bottom buffer so waves never feel clipped */
+    padding-bottom: 6px;
   }
   .topbar-layer {
     position: absolute;
@@ -36,12 +48,12 @@
   }
   .topbar-scene::-webkit-scrollbar { display: none; }
   
-  /* Waves */
+  /* Waves (sit at the true bottom of the scene area) */
   .tb-waves {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 0;     /* use the buffered area inside the scene */
     height: 48px;
     overflow: hidden;
     pointer-events: none;
@@ -64,12 +76,15 @@
     .tb-wave-strip { animation-duration: 20s !important; }
   }
   
-  /* Selectors Bar */
+  /* =========================
+     Overlapping Selectors Bar
+     (pull up—but not over the waves)
+     ========================= */
   .selectors-wrap {
     width: 100%;
     box-sizing: border-box;
     padding-inline: 12px;
-    margin-top: -26px; /* overlap enough, but leave waves visible */
+    margin-top: -20px;  /* less overlap so bar doesn't sit on the waterline */
     position: relative;
     z-index: 20;
   }
