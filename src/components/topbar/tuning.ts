@@ -46,8 +46,8 @@ export const ROCK = {
 // ===== GCDC logo =====
 export const BADGE = {
   imgSrc: "/logos/gcdclogo.png",
-  width: 100,
-  height: 100,
+  width: 130,
+  height: 130,
   opacity: 0.98,
   centerOffsetY: -8,
   centerOffsetX: 0,
