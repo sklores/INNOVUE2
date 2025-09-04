@@ -8,7 +8,7 @@ const SOURCES: { key: SourceKey; label: string }[] = [
   { key: "reviews", label: "Reviews" },
   { key: "bank",    label: "Bank"    },
   { key: "news",    label: "News"    },
-  { key: "ap",      label: "A/P"     }, // new
+  { key: "ap",      label: "A/P"     },
 ];
 
 // Mock feed (replace with live data later)
@@ -36,11 +36,11 @@ const MOCK_FEED: Record<SourceKey, string[]> = {
   ],
 };
 
-// Small metrics row (optional; you can remove if you want it even tighter)
+// Small metrics row (optional)
 const METRICS = [
-  { label: "Mentions", val: 27 },
-  { label: "New Reviews", val: 5 },
-  { label: "Links Clicked", val: 92 },
+  { label: "Mentions",      val: 27, dot: "#60a5fa" },
+  { label: "New Reviews",   val: 5,  dot: "#60a5fa" },
+  { label: "Links Clicked", val: 92, dot: "#22c55e" },
 ];
 
 const Marquee: React.FC = () => {
@@ -48,36 +48,31 @@ const Marquee: React.FC = () => {
   const feed = MOCK_FEED[active] ?? [];
   const ticker = useMemo(() => (feed.length ? feed.join("  •  ") : ""), [feed]);
 
-  // ——— Styles that match KPI tiles ———
+  // --- Styles (match KPI tiles; add consistent side padding) ---
   const styles = {
-    // Outer widget exactly like a KPI card
     card: {
       border: "1px solid #E1E2E6",
       borderRadius: 16,
       background: "#FFFFFF",
       boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
-      padding: 14,
+      padding: 14,            // same as KPI tiles
       marginTop: 12,
       position: "relative" as const,
       pointerEvents: "auto" as const,
     },
 
-    // Header row: left (title + tabs) and right (logo)
-    header: {
-      display: "grid",
-      gridTemplateColumns: "1fr auto",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 10,
-    },
-    leftHeader: {
+    // Top row: tabs + GCDC logo, all centered with breathing room
+    centerRow: {
       display: "flex",
       alignItems: "center",
+      justifyContent: "center", // centered group
       gap: 10,
+      flexWrap: "wrap" as const,
+      paddingInline: 12,        // same side padding feel as KPI tiles
+      marginBottom: 10,
     },
-    headerTitle: { fontWeight: 800 as const, color: "#0f172a", letterSpacing: 0.3 },
 
-    // Tabs in one line; allow horizontal scroll if very narrow
+    // Tabs in one line; if too small, they can scroll horizontally
     tabs: {
       display: "flex",
       alignItems: "center",
@@ -100,9 +95,8 @@ const Marquee: React.FC = () => {
       cursor: "pointer",
     }),
 
-    // Logo top-right corner; larger chip, no animation
+    // GCDC logo at top-right of the centered row (bigger chip), no animation
     brandChip: {
-      position: "relative" as const,
       width: 44,
       height: 44,
       borderRadius: 999,
@@ -114,7 +108,7 @@ const Marquee: React.FC = () => {
     },
     brandImg: { width: 40, height: 40, objectFit: "contain" as const, borderRadius: "50%" },
 
-    // Ticker pill (static; no animation)
+    // Ticker (static; manual scroll if long)
     tickerWrap: {
       border: "1px solid #E1E2E6",
       borderRadius: 12,
@@ -133,7 +127,6 @@ const Marquee: React.FC = () => {
       fontWeight: 700,
       letterSpacing: 0.2,
       padding: "8px 12px",
-      // no animation; allow user scroll on narrow screens
     },
 
     // Metrics row (centered)
@@ -167,52 +160,38 @@ const Marquee: React.FC = () => {
 
   return (
     <section style={styles.card}>
-      {/* Header */}
-      <div style={styles.header as React.CSSProperties}>
-        <div style={styles.leftHeader as React.CSSProperties}>
-          <span style={styles.headerTitle}>GCDC Live Feed</span>
-
-          {/* Tabs — one line, with A/P at the end */}
-          <div style={styles.tabs as React.CSSProperties}>
-            {SOURCES.map(s => (
-              <button
-                key={s.key}
-                onClick={() => setActive(s.key)}
-                style={styles.tab(active === s.key) as React.CSSProperties}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+      {/* Centered top row: tabs + GCDC logo */}
+      <div style={styles.centerRow as React.CSSProperties}>
+        <div style={styles.tabs as React.CSSProperties}>
+          {SOURCES.map(s => (
+            <button
+              key={s.key}
+              onClick={() => setActive(s.key)}
+              style={styles.tab(active === s.key) as React.CSSProperties}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
-        {/* Top-right logo chip (bigger), no animation */}
         <div style={styles.brandChip as React.CSSProperties}>
           <img src="/logos/gcdclogo.png" alt="GCDC" style={styles.brandImg as React.CSSProperties} />
         </div>
       </div>
 
-      {/* Ticker (static — no animation) */}
+      {/* Ticker (static text; horizontally scrollable if long) */}
       <div style={styles.tickerWrap as React.CSSProperties}>
-        <div style={styles.tickerPill as React.CSSProperties}>
-          {ticker}
-        </div>
+        <div style={styles.tickerPill as React.CSSProperties}>{ticker}</div>
       </div>
 
-      {/* Metrics (optional; comment out to make the widget shorter) */}
+      {/* Metrics */}
       <div style={styles.metricsRow as React.CSSProperties}>
-        <span style={styles.metric as React.CSSProperties}>
-          <span style={styles.metricDot("#60a5fa")} />
-          Mentions: {METRICS[0].val}
-        </span>
-        <span style={styles.metric as React.CSSProperties}>
-          <span style={styles.metricDot("#60a5fa")} />
-          New Reviews: {METRICS[1].val}
-        </span>
-        <span style={styles.metric as React.CSSProperties}>
-          <span style={styles.metricDot("#22c55e")} />
-          Links Clicked: {METRICS[2].val}
-        </span>
+        {METRICS.map((m, i) => (
+          <span key={i} style={styles.metric as React.CSSProperties}>
+            <span style={styles.metricDot(m.dot)} />
+            {m.label}: {m.val}
+          </span>
+        ))}
       </div>
     </section>
   );
