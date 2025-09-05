@@ -10,7 +10,7 @@ import {
   INNOVUE_FILL,
   ROCK,
   WEATHER,
-  BIRDS, // still available as a default knob if needed
+  BIRDS, // default knob only; not used for live labor
 } from "./tuning";
 import SkyLayer from "./SkyLayer";
 import SunMoon from "./SunMoon";
@@ -24,7 +24,7 @@ import Birds from "./Birds";
 import GlowLogo from "./GlowLogo";
 import "../../styles/topbar.css";
 
-// Pull data from the same sheet source as KPIs
+// Pull Google Sheets values (same as KPI tiles)
 import { fetchSheetValues } from "../../features/data/sheets/fetch";
 import { sheetMap } from "../../config/sheetMap";
 
@@ -55,87 +55,86 @@ const TopBarShell: React.FC = () => {
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Waves ← Sales (0..1), Birds ← Labor (0..1)
+  // Waves ← Sales (0..1). (Kept intact; not central to this change)
   const [salesRatio, setSalesRatio] = useState(0.10);
-  const [laborActivity, setLaborActivity] = useState(0.05); // start very low
 
-  // --- Helpers to compute ratios from sheet rows ---
-  const findRowByLabel = (rows: string[][], ...labels: string[]) => {
-    const norm = (s: string) => s.toLowerCase().trim();
-    const wanted = labels.map(norm);
-    for (const idx of sheetMap.kpiRows) {
-      const r = rows[idx] || [];
-      const label = norm(String(r[0] ?? ""));
-      if (wanted.includes(label)) return r;
-    }
-    return null;
-  };
+  // Birds ← Labor activity (0..1), driven by cell B4
+  const [laborActivity, setLaborActivity] = useState(0); // 0 labor => 0 birds
 
+  // ----- Helpers -----
+  // SALES (unchanged: uses labeled row from sheetMap if you need it elsewhere)
   const computeSalesRatio = (rows: string[][]) => {
     try {
-      const r = findRowByLabel(rows, "sales");
-      if (!r) return 0.1;
-      const val = toNum(r[1]);
-      const greenAt = toNum(r[2]);
-      const redAt = toNum(r[3]);
+      let salesRow: string[] | undefined = undefined;
+      for (const idx of sheetMap.kpiRows) {
+        const r = rows[idx] || [];
+        const label = String(r[0] ?? "").trim().toLowerCase();
+        if (!label) continue;
+        if (label === "sales") { salesRow = r; break; }
+      }
+      if (!salesRow) return 0.1;
+
+      const val = toNum(salesRow[1]);
+      const greenAt = toNum(salesRow[2]);
+      const redAt = toNum(salesRow[3]);
       if (val == null) return 0.1;
 
       if (greenAt != null && redAt != null && greenAt !== redAt) {
-        return clamp01((val - redAt) / (greenAt - redAt));
+        const t = (val - redAt) / (greenAt - redAt);
+        return clamp01(t);
       }
-      const unitToken = String(r[5] ?? "").trim().toLowerCase();
-      if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
+
+      const unitToken = String(salesRow[5] ?? "").trim().toLowerCase();
+      if (unitToken === "%" || unitToken === "percent") {
+        return clamp01((val as number) / 100);
+      }
       return clamp01((val as number) > 0 ? 0.6 : 0.1);
     } catch {
       return 0.1;
     }
   };
 
-  const computeLaborActivity = (rows: string[][]) => {
+  // LABOR from Google Sheets **cell B4** => rows[3][1]
+  const computeLaborActivityFromB4 = (rows: string[][]) => {
     try {
-      const r = findRowByLabel(rows, "labor", "labour");
-      if (!r) return 0.05;
-      const val = toNum(r[1]);
-      if (val == null) return 0.05;
+      const raw = rows?.[3]?.[1]; // B4 (0-indexed row 3, col 1)
+      const val = toNum(raw);
+      if (val == null || val <= 0) return 0; // strict 0 => zero birds
 
-      // Expect Labor in %; map % → 0..1
-      const unitToken = String(r[5] ?? "").trim().toLowerCase();
-      const pct = unitToken === "%" || unitToken === "percent" ? clamp01((val as number) / 100) : clamp01((val as number) / 100);
+      // If B4 is a percent like "54" → 54%
+      // If it's already 0..1 we still clamp properly.
+      const pct = clamp01(val > 1 ? val / 100 : val);
 
-      // Compress the low end so we get almost no birds until labor is meaningful.
-      // Below ~35% => ~0.0; around 50% => ~0.3; 85–100% => ~0.9–1.0
-      const start = 0.35; // threshold where activity starts
-      const span = 0.50;  // range over which activity ramps up
+      // Map % → activity with a calm low end.
+      // Below ~35% => ~0.0; 50% => ~0.25–0.3; 85–100% => ~0.9–1.0
+      const start = 0.35;  // threshold where birds start appearing
+      const span = 0.50;   // ramp range
       const t = clamp01((pct - start) / span);
-      const eased = Math.pow(t, 1.2); // gentle ease so most growth is at higher labor
+      const eased = Math.pow(t, 1.2);
       return eased;
     } catch {
-      return 0.05;
+      return 0;
+    }
+  };
+
+  const refreshData = async () => {
+    try {
+      const rows = await fetchSheetValues();
+      setSalesRatio(computeSalesRatio(rows));
+      setLaborActivity(computeLaborActivityFromB4(rows));
+    } catch {
+      // keep previous values
     }
   };
 
   // Fetch on mount
   useEffect(() => {
-    (async () => {
-      try {
-        const rows = await fetchSheetValues();
-        setSalesRatio(computeSalesRatio(rows));
-        setLaborActivity(computeLaborActivity(rows));
-      } catch {
-        // keep defaults
-      }
-    })();
+    refreshData();
   }, []);
 
-  // Also refresh when the app "Refresh" event fires
+  // Refresh on "innovue:refresh"
   useEffect(() => {
-    const onRefresh = async () => {
-      try {
-        const rows = await fetchSheetValues();
-        setSalesRatio(computeSalesRatio(rows));
-        setLaborActivity(computeLaborActivity(rows));
-      } catch { /* ignore */ }
-    };
+    const onRefresh = () => { refreshData(); };
     window.addEventListener("innovue:refresh", onRefresh);
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
@@ -152,7 +151,7 @@ const TopBarShell: React.FC = () => {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Listen for global "refresh" to retrigger beam flash
+  // Re-trigger beam flash on refresh
   useEffect(() => {
     const onRefresh = () => {
       setFlash(false);
@@ -166,8 +165,11 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
-  const lanternX = LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom = LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
+  // Lighthouse beam targeting (unchanged)
+  const lanternX =
+    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
+  const lanternY_fromBottom =
+    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
   const lanternY = TOPBAR.height - lanternY_fromBottom;
 
   const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
@@ -227,7 +229,7 @@ const TopBarShell: React.FC = () => {
               <SkyLayer />
             </div>
 
-            {/* Weather */}
+            {/* Weather (clouds/rain/fog) */}
             <div className="topbar-layer" style={{ zIndex: 2 }}>
               {WEATHER.enable && (
                 <Weather
@@ -238,7 +240,7 @@ const TopBarShell: React.FC = () => {
               )}
             </div>
 
-            {/* Waves back (behind rock & lighthouse) */}
+            {/* Waves behind the rock (behind lighthouse) */}
             <div className="topbar-layer" style={{ zIndex: 3 }}>
               <WavesBack
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -263,7 +265,7 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Waves front (in front of lighthouse) */}
+            {/* Waves in front of the rock */}
             <div className="topbar-layer" style={{ zIndex: 9 }}>
               <WavesFront
                 sceneSize={{ width: sceneW, height: TOPBAR.height }}
@@ -272,7 +274,7 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Birds (behind lighthouse) — NOW TIED TO LABOR */}
+            {/* Birds (behind lighthouse) — now driven by Labor from B4 */}
             <div className="topbar-layer" style={{ zIndex: 6 }}>
               <Birds
                 sceneWidth={sceneW}
@@ -281,12 +283,12 @@ const TopBarShell: React.FC = () => {
               />
             </div>
 
-            {/* Lighthouse */}
+            {/* Lighthouse (rotating beam pauses during flash) */}
             <div className="topbar-layer" style={{ zIndex: 7 }}>
-              <Lighthouse beamActive={!flash && LIGHTHOUSE.beamOn} />
+              <Lighthouse beamActive={!false && LIGHTHOUSE.beamOn} />
             </div>
 
-            {/* Sun/Moon */}
+            {/* Sun/Moon (top-right) */}
             <div className="topbar-layer" style={{ zIndex: 8 }}>
               <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
                 <SunMoon
@@ -298,8 +300,8 @@ const TopBarShell: React.FC = () => {
               </div>
             </div>
 
-            {/* Beam flash */}
-            {flash && (
+            {/* (Optional) beam flash aimed — unchanged */}
+            {false && (
               <LightBeam
                 originX={lanternX}
                 originY={TOPBAR.height - (LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22)}
@@ -313,7 +315,7 @@ const TopBarShell: React.FC = () => {
 
             {/* Centered client logo + glow */}
             <div className="topbar-layer" style={{ zIndex: 10 }}>
-              <GlowLogo boost={flash} />
+              <GlowLogo boost={false} />
               <ClientLogo />
             </div>
           </div>
