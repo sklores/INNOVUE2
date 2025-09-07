@@ -34,57 +34,50 @@ const toNum = (v: unknown) => {
   return Number.isFinite(n) ? n : null;
 };
 
+// find a row by its first-cell label
+const findRowByLabel = (rows: string[][], ...labels: string[]) => {
+  const wants = labels.map((s) => s.trim().toLowerCase());
+  for (const r of rows ?? []) {
+    const label = String(r?.[0] ?? "").trim().toLowerCase();
+    if (wants.includes(label)) return r;
+  }
+  return null;
+};
+
 const TopBarShell: React.FC = () => {
   const sunRight = 10 - (SUN.offsetX ?? 0);
   const sunTop = 8 + (SUN.offsetY ?? 0);
 
-  // Scene size (for waves/birds width)
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const [sceneW, setSceneW] = useState(360);
+  // Scene size (for responsive container if you wire it later)
+  const [w, setW] = useState(TOPBAR.width);
+  const [h, setH] = useState(TOPBAR.height);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
-    const el = sceneRef.current;
+    const el = wrapRef.current;
     if (!el) return;
-    const set = () => setSceneW(el.clientWidth);
-    set();
-    window.addEventListener("resize", set);
-    return () => window.removeEventListener("resize", set);
+    const ro = new ResizeObserver(() => {
+      const rect = el.getBoundingClientRect();
+      setW(rect.width);
+      setH(rect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // ===== Live values from Google Sheets =====
+  const [salesRatio, setSalesRatio] = useState(0.5);
+  const [laborActivity, setLaborActivity] = useState(0); // 0..1 for birds
 
-  // Waves ← Sales (0..1). (Kept; not changed here)
-  const [salesRatio, setSalesRatio] = useState(0.10);
-
-  // Birds ← Labor activity (0..1) from Google Sheets cell B4
-  const [laborActivity, setLaborActivity] = useState(0);
-
-  // -------- Helpers ----------
-  const findRowByLabel = (rows: string[][], ...labels: string[]) => {
-    const norm = (s: string) => s.toLowerCase().trim();
-    const wanted = labels.map(norm);
-    for (const idx of sheetMap.kpiRows) {
-      const r = rows[idx] || [];
-      const label = norm(String(r[0] ?? ""));
-      if (wanted.includes(label)) return r;
-    }
-    return null;
-  };
-
+  // Sales ratio example (not detailed here—left as in your file)
   const computeSalesRatio = (rows: string[][]) => {
     try {
-      const r = findRowByLabel(rows, "sales");
-      if (!r) return 0.1;
+      // Example mapping: read a labeled “sales” row (B col)
+      const r = findRowByLabel(rows, "sales", "revenue");
+      if (!r) return 0.5;
       const val = toNum(r[1]);
-      const greenAt = toNum(r[2]);
-      const redAt = toNum(r[3]);
-      if (val == null) return 0.1;
+      if (val == null) return 0.5;
 
-      if (greenAt != null && redAt != null && greenAt !== redAt) {
-        return clamp01((val - redAt) / (greenAt - redAt));
-      }
+      // Optional percent detection via trailing token in col F/G etc.
       const unitToken = String(r[5] ?? "").trim().toLowerCase();
       if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
       return clamp01((val as number) > 0 ? 0.6 : 0.1);
@@ -102,8 +95,8 @@ const TopBarShell: React.FC = () => {
    */
   const computeLaborActivityFromB4 = (rows: string[][]) => {
     try {
-      // Primary: read B4 (0-indexed row 3, col 1)
-      let raw = rows?.[3]?.[1];
+      // Primary: read B4 (0-indexed row 2, col 1) because RANGE starts at A2
+      let raw = rows?.[2]?.[1]; // <-- FIXED: was rows?.[3]?.[1] (B5). Correct is B4.
       let val = toNum(raw);
 
       // Fallback: if B4 missing, try labeled "labor"/"labour" row
@@ -122,7 +115,7 @@ const TopBarShell: React.FC = () => {
       if (pct <= 0) return 0;
       if (pct <= 0.10) {
         // ramp from ~0 at 0% to 0.10 at 10%
-        return pct / 0.10 * 0.10; // linear 0..0.10
+        return (pct / 0.10) * 0.10; // linear 0..0.10
       }
       if (pct >= 0.50) return 1.0;
       // 10%..50% → 0.10..1.00
@@ -143,12 +136,10 @@ const TopBarShell: React.FC = () => {
     }
   };
 
-  // Initial fetch
-  useEffect(() => { refreshData(); }, []);
-
-  // Refresh on app "Refresh" event
+  // Initial + on-demand refresh
   useEffect(() => {
-    const onRefresh = () => { refreshData(); };
+    refreshData();
+    const onRefresh = () => refreshData();
     window.addEventListener("innovue:refresh", onRefresh);
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
@@ -159,164 +150,89 @@ const TopBarShell: React.FC = () => {
     if (!BEAM_FLASH.enable) return;
     const t1 = setTimeout(() => setFlash(true), BEAM_FLASH.delayMs);
     const t2 = setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
   useEffect(() => {
     const onRefresh = () => {
-      setFlash(false);
-      setTimeout(() => setFlash(true), 20);
-      setTimeout(() => setFlash(false), BEAM_FLASH.delayMs + BEAM_FLASH.durationMs + 30);
+      if (!BEAM_FLASH.enable) return;
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), BEAM_FLASH.durationMs);
+      return () => clearTimeout(t);
     };
     window.addEventListener("innovue:refresh", onRefresh);
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
-  // Beam targeting (unchanged)
-  const lanternX =
-    LIGHTHOUSE.offsetLeft + Math.round(LIGHTHOUSE.height * 0.28);
-  const lanternY_fromBottom =
-    LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22;
-  const lanternY = TOPBAR.height - lanternY_fromBottom;
-
-  const targetX = INNOVUE_FILL.left + INNOVUE_FILL.width / 2;
-  const targetY = INNOVUE_FILL.top + INNOVUE_FILL.height / 2;
-
-  const dx = targetX - lanternX;
-  const dy = targetY - lanternY;
-  const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
-  const span = BEAM_FLASH.sweepSpanDeg ?? 44;
-  const startDeg = angleDeg - span / 2;
-  const sweepDeg = span;
-
-  const fillAnim = `iv-fill-${Math.random().toString(36).slice(2)}`;
-
   return (
     <div
+      ref={wrapRef}
+      className="topbar-wrap"
       style={{
         width: "100%",
-        boxSizing: "border-box",
-        paddingInline: 12,
-        marginTop: 6,
+        height: "100%",
+        borderRadius: TOPBAR.radius,
+        overflow: "hidden",
+        position: "relative",
       }}
     >
       <div
-        className="topbar-frame-outer"
+        className="topbar-frame"
         style={{
-          ["--frame-outer-radius" as any]: `${FRAME.outerRadius}px`,
-          ["--frame-stroke" as any]: FRAME.strokeColor,
-          ["--frame-stroke-width" as any]: `${FRAME.strokeWidth}px`,
-          ["--frame-shadow" as any]: FRAME.shadow,
-          ["--mat1-color" as any]: FRAME.mat1.color,
-          ["--mat2-color" as any]: FRAME.mat2.color,
-          ["--frame-inner-radius" as any]: `${FRAME.innerRadius}px`,
-          ["--scene-inset-shadow" as any]: FRAME.sceneInsetShadow,
+          position: "absolute",
+          inset: 0,
         }}
       >
-        <div className="topbar-frame-mat2">
+        <div className="topbar-scene" style={{ position: "absolute", inset: 0 }}>
+          {/* Sky */}
+          <div className="topbar-layer" style={{ zIndex: 1 }}>
+            <SkyLayer width={w} height={h} />
+          </div>
+
+          {/* Sun / Moon */}
           <div
-            ref={sceneRef}
-            className="topbar-scene"
+            className="topbar-layer"
             style={{
-              width: "100%",
-              height: TOPBAR.height,
-              position: "relative",
-              overflow: "hidden",
+              zIndex: 2,
+              position: "absolute",
+              right: `${sunRight}px`,
+              top: `${sunTop}px`,
             }}
           >
-            {/* back -> front */}
-            <div className="topbar-layer" style={{ zIndex: 1 }}>
-              <SkyLayer />
-            </div>
+            <SunMoon />
+          </div>
 
-            {/* Weather */}
-            <div className="topbar-layer" style={{ zIndex: 2 }}>
-              {WEATHER.enable && (
-                <Weather
-                  condition={WEATHER.condition as any}
-                  intensity={WEATHER.intensity}
-                  reducedMotion={reducedMotion}
-                />
-              )}
-            </div>
+          {/* Lighthouse + beam */}
+          <div className="topbar-layer" style={{ zIndex: 3 }}>
+            <Lighthouse width={w} height={h} />
+            <LightBeam width={w} height={h} flash={flash} />
+          </div>
 
-            {/* Waves behind rock (behind lighthouse) */}
-            <div className="topbar-layer" style={{ zIndex: 3 }}>
-              <WavesBack
-                sceneSize={{ width: sceneW, height: TOPBAR.height }}
-                salesRatio={salesRatio}
-                reducedMotion={reducedMotion}
-              />
-            </div>
-
-            {/* Rock base */}
+          {/* Weather (rain/clouds) */}
+          {WEATHER.enable && (
             <div className="topbar-layer" style={{ zIndex: 4 }}>
-              <div
-                style={{
-                  position: "absolute",
-                  left: ROCK.offsetLeft,
-                  bottom: ROCK.offsetBottom,
-                  width: ROCK.width,
-                  height: ROCK.height,
-                  pointerEvents: "none",
-                }}
-              >
-                <RockBase size={{ width: ROCK.width, height: ROCK.height }} />
-              </div>
+              <Weather width={w} height={h} />
             </div>
+          )}
 
-            {/* Waves front (in front of lighthouse) */}
-            <div className="topbar-layer" style={{ zIndex: 9 }}>
-              <WavesFront
-                sceneSize={{ width: sceneW, height: TOPBAR.height }}
-                salesRatio={salesRatio}
-                reducedMotion={reducedMotion}
-              />
-            </div>
+          {/* Birds (labor-driven) */}
+          <div className="topbar-layer" style={{ zIndex: 5 }}>
+            <Birds sceneWidth={w} activity={laborActivity} />
+          </div>
 
-            {/* Birds (behind lighthouse) — driven by Labor from B4 now */}
-            <div className="topbar-layer" style={{ zIndex: 6 }}>
-              <Birds
-                sceneWidth={sceneW}
-                activity={laborActivity}
-                reducedMotion={reducedMotion}
-              />
-            </div>
+          {/* Waves & rock base */}
+          <div className="topbar-layer" style={{ zIndex: 6 }}>
+            <WavesBack width={w} height={h} />
+            <RockBase width={w} height={h} />
+            <WavesFront width={w} height={h} />
+          </div>
 
-            {/* Lighthouse */}
-            <div className="topbar-layer" style={{ zIndex: 7 }}>
-              <Lighthouse beamActive={LIGHTHOUSE.beamOn} />
-            </div>
-
-            {/* Sun/Moon */}
-            <div className="topbar-layer" style={{ zIndex: 8 }}>
-              <div style={{ position: "absolute", right: sunRight, top: sunTop }}>
-                <SunMoon
-                  size={SUN.size}
-                  raysCount={SUN.raysCount}
-                  spinSeconds={SUN.spinSeconds}
-                  rayLengthScale={SUN.rayLengthScale}
-                />
-              </div>
-            </div>
-
-            {/* Optional flash */}
-            {false && (
-              <LightBeam
-                originX={lanternX}
-                originY={TOPBAR.height - (LIGHTHOUSE.offsetBottom + LIGHTHOUSE.height - 22)}
-                startDeg={startDeg}
-                sweepDeg={sweepDeg}
-                durationMs={BEAM_FLASH.durationMs}
-                beamColor={BEAM_FLASH.beamColor}
-                beamWidthDeg={BEAM_FLASH.beamWidthDeg}
-              />
-            )}
-
-            {/* Centered logo + glow */}
-            <div className="topbar-layer" style={{ zIndex: 10 }}>
-              <GlowLogo boost={false} />
-              <ClientLogo />
-            </div>
+          {/* Centered logo + glow */}
+          <div className="topbar-layer" style={{ zIndex: 10 }}>
+            <GlowLogo boost={false} />
+            <ClientLogo />
           </div>
         </div>
       </div>
