@@ -1,7 +1,7 @@
 // src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// ✅ paths based on your file tree
+// Paths based on your tree
 import { fetchSheetValues } from "../../features/data/sheets/fetch";
 import { sheetMap } from "../../config/sheetMap";
 
@@ -19,12 +19,7 @@ import ClientLogo from "./ClientLogo";
 
 // Styles & tuning
 import "../../styles/topbar.css";
-import {
-  TOPBAR,
-  SUN,
-  BEAM_FLASH,
-  WEATHER as WEATHER_CFG,
-} from "./tuning";
+import { TOPBAR, SUN, BEAM_FLASH, WEATHER as WEATHER_CFG } from "./tuning";
 
 /** ---------- utils ---------- */
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -44,9 +39,11 @@ const findRowByLabel = (rows: string[][], ...labels: string[]) => {
 /** ---------- component ---------- */
 const TopBarShell: React.FC = () => {
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [w, setW] = useState(TOPBAR?.width ?? 1200);
-  const [h, setH] = useState(TOPBAR?.height ?? 180);
   const [err, setErr] = useState<string | null>(null);
+
+  // Optional: if you want to keep a notion of container size for future use.
+  const [, setW] = useState(TOPBAR?.width ?? 1200);
+  const [, setH] = useState(TOPBAR?.height ?? 180);
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -89,7 +86,7 @@ const TopBarShell: React.FC = () => {
    */
   const computeLaborActivityFromB4 = (rows: string[][]) => {
     try {
-      let raw = rows?.[2]?.[1]; // ✅ B4
+      let raw = rows?.[2]?.[1]; // B4
       let val = toNum(raw);
 
       // Fallback by label if needed
@@ -148,11 +145,31 @@ const TopBarShell: React.FC = () => {
     <div
       ref={wrapRef}
       className="topbar-wrap"
-      style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", borderRadius: TOPBAR?.radius ?? 12 }}
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: TOPBAR?.radius ?? 12,
+      }}
     >
       {/* On-screen error to avoid blank page */}
       {err && (
-        <div style={{ position: "absolute", top: 8, left: 8, right: 8, zIndex: 9999, padding: 10, background: "#ffefef", border: "1px solid #ffb3b3", color: "#c00", borderRadius: 8, fontSize: 12 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            right: 8,
+            zIndex: 9999,
+            padding: 10,
+            background: "#ffefef",
+            border: "1px solid #ffb3b3",
+            color: "#c00",
+            borderRadius: 8,
+            fontSize: 12,
+          }}
+        >
           <strong>TopBar error:</strong> {err}
         </div>
       )}
@@ -161,37 +178,46 @@ const TopBarShell: React.FC = () => {
         <div className="topbar-scene" style={{ position: "absolute", inset: 0 }}>
           {/* Sky */}
           <div className="topbar-layer" style={{ zIndex: 1 }}>
-            <SkyLayer width={w} height={h} />
+            <SkyLayer />
           </div>
 
           {/* Sun / Moon */}
-          <div className="topbar-layer" style={{ zIndex: 2, position: "absolute", right: `${sunRight}px`, top: `${sunTop}px` }}>
+          <div
+            className="topbar-layer"
+            style={{
+              zIndex: 2,
+              position: "absolute",
+              right: `${sunRight}px`,
+              top: `${sunTop}px`,
+            }}
+          >
             <SunMoon />
           </div>
 
           {/* Lighthouse + beam */}
           <div className="topbar-layer" style={{ zIndex: 3 }}>
-            <Lighthouse width={w} height={h} />
-            <LightBeam width={w} height={h} flash={flash} />
+            <Lighthouse />
+            <LightBeam flash={flash} />
           </div>
 
           {/* Weather */}
           {WEATHER_CFG?.enable && (
             <div className="topbar-layer" style={{ zIndex: 4 }}>
-              <Weather width={w} height={h} />
+              <Weather />
             </div>
           )}
 
           {/* Birds (labor-driven) */}
           <div className="topbar-layer" style={{ zIndex: 5 }}>
-            <Birds sceneWidth={w} activity={laborActivity} />
+            {/* If your Birds component uses a different prop name, tell me and I'll align it. */}
+            <Birds activity={laborActivity} />
           </div>
 
           {/* Waves + Rock base */}
           <div className="topbar-layer" style={{ zIndex: 6 }}>
-            <WavesBack width={w} height={h} />
-            <RockBase width={w} height={h} />
-            <WavesFront width={w} height={h} />
+            <WavesBack />
+            <RockBase />
+            <WavesFront />
           </div>
 
           {/* Centered logo + glow */}
