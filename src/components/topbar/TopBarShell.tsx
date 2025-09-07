@@ -1,12 +1,11 @@
-// TopBarShell.tsx
+// src/components/topbar/TopBarShell.tsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// NOTE: These imports assume this file sits in the SAME FOLDER as these modules.
-// If your files are elsewhere, tell me the exact paths and I'll swap them.
-import { fetchSheetValues } from "./fetch";
-import { sheetMap } from "./sheetMap";
+// ✅ paths based on your file tree
+import { fetchSheetValues } from "../../features/data/sheets/fetch";
+import { sheetMap } from "../../config/sheetMap";
 
-// Scene pieces (adjust paths only if yours differ)
+// Scene pieces (same folder)
 import SunMoon from "./SunMoon";
 import Birds from "./Birds";
 import Lighthouse from "./Lighthouse";
@@ -18,9 +17,8 @@ import Weather from "./Weather";
 import GlowLogo from "./GlowLogo";
 import ClientLogo from "./ClientLogo";
 
-import "./topbar.css";
-
-// Tuning knobs (adjust path only if your tuning.ts is elsewhere)
+// Styles & tuning
+import "../../styles/topbar.css";
 import {
   TOPBAR,
   SUN,
@@ -28,7 +26,7 @@ import {
   WEATHER as WEATHER_CFG,
 } from "./tuning";
 
-/** ---------- small utils ---------- */
+/** ---------- utils ---------- */
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const toNum = (v: unknown) => {
   const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
@@ -43,7 +41,7 @@ const findRowByLabel = (rows: string[][], ...labels: string[]) => {
   return null;
 };
 
-/** ---------- main component ---------- */
+/** ---------- component ---------- */
 const TopBarShell: React.FC = () => {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [w, setW] = useState(TOPBAR?.width ?? 1200);
@@ -62,19 +60,17 @@ const TopBarShell: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  /** ----- live values from Google Sheets ----- */
+  // Live values from Google Sheets
   const [salesRatio, setSalesRatio] = useState(0.5);
   const [laborActivity, setLaborActivity] = useState(0);
 
   const computeSalesRatio = (rows: string[][]) => {
     try {
-      // example heuristic: read a labeled row "sales" or "revenue"
       const r = findRowByLabel(rows, "sales", "revenue");
       if (!r) return 0.5;
       const val = toNum(r[1]);
       if (val == null) return 0.5;
 
-      // If the sheet stores percent-style values (>1), normalize
       const unitToken = String(r[5] ?? "").trim().toLowerCase();
       if (unitToken === "%" || unitToken === "percent") return clamp01((val as number) / 100);
       return clamp01((val as number) > 0 ? 0.6 : 0.1);
@@ -84,7 +80,7 @@ const TopBarShell: React.FC = () => {
   };
 
   /**
-   * Labor from **cell B4** (with RANGE starting at A2)
+   * Labor from **cell B4** (range starts at A2, so B4 = rows[2][1])
    * Mapping:
    *   0%  -> 0.00
    *   10% -> 0.10
@@ -93,11 +89,10 @@ const TopBarShell: React.FC = () => {
    */
   const computeLaborActivityFromB4 = (rows: string[][]) => {
     try {
-      // Since sheetMap.RANGE starts at A2, B4 is rows[2][1]:
-      let raw = rows?.[2]?.[1]; // <-- IMPORTANT: B4
+      let raw = rows?.[2]?.[1]; // ✅ B4
       let val = toNum(raw);
 
-      // Optional fallback by label if B4 is blank:
+      // Fallback by label if needed
       if (val == null) {
         const r = findRowByLabel(rows, "labor", "labour");
         if (r) val = toNum(r[1]);
@@ -118,7 +113,6 @@ const TopBarShell: React.FC = () => {
   const refreshData = async () => {
     try {
       setErr(null);
-      // This uses your existing fetch.ts + sheetMap.ts
       const rows = await fetchSheetValues(sheetMap);
       setSalesRatio(computeSalesRatio(rows));
       setLaborActivity(computeLaborActivityFromB4(rows));
@@ -135,7 +129,7 @@ const TopBarShell: React.FC = () => {
     return () => window.removeEventListener("innovue:refresh", onRefresh);
   }, []);
 
-  /** ----- one-shot beam flash ----- */
+  // Beam flash
   const [flash, setFlash] = useState(false);
   useEffect(() => {
     if (!BEAM_FLASH?.enable) return;
@@ -147,13 +141,16 @@ const TopBarShell: React.FC = () => {
     };
   }, []);
 
-  /** ----- helpers for layout ----- */
   const sunRight = 10 - (SUN?.offsetX ?? 0);
   const sunTop = 8 + (SUN?.offsetY ?? 0);
 
   return (
-    <div ref={wrapRef} className="topbar-wrap" style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", borderRadius: TOPBAR?.radius ?? 12 }}>
-      {/* If anything fails, show an on-screen banner instead of a blank page */}
+    <div
+      ref={wrapRef}
+      className="topbar-wrap"
+      style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", borderRadius: TOPBAR?.radius ?? 12 }}
+    >
+      {/* On-screen error to avoid blank page */}
       {err && (
         <div style={{ position: "absolute", top: 8, left: 8, right: 8, zIndex: 9999, padding: 10, background: "#ffefef", border: "1px solid #ffb3b3", color: "#c00", borderRadius: 8, fontSize: 12 }}>
           <strong>TopBar error:</strong> {err}
